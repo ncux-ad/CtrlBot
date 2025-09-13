@@ -40,18 +40,45 @@ async def on_startup():
         await db.init_schema()
         logger.info("Database connected and schema initialized")
         
-        # Регистрация обработчиков
-        from handlers import posts, admin, reminders, digest, ai
-        dp.include_router(admin.router)  # Админские команды первыми
-        dp.include_router(posts.router)
-        dp.include_router(reminders.router)
-        dp.include_router(digest.router)
-        dp.include_router(ai.router)
+        # Регистрация обработчиков (только для админов)
+        from handlers import post_handlers, admin, reminder_handlers, digest_handlers, ai_handlers
+        dp.include_router(admin.router)
+        dp.include_router(post_handlers.router)
+        dp.include_router(reminder_handlers.router)
+        dp.include_router(digest_handlers.router)
+        dp.include_router(ai_handlers.router)
+        
+        # Глобальный обработчик для не-админов (должен быть последним)
+        from aiogram import Router
+        from aiogram.types import Message, CallbackQuery
+        
+        non_admin_router = Router()
+        
+        @non_admin_router.message()
+        async def handle_non_admin_messages(message: Message):
+            """Обработчик для всех сообщений от не-админов"""
+            if message.from_user and message.from_user.id not in config.ADMIN_IDS:
+                # НЕ ОТВЕЧАЕМ - просто игнорируем
+                return
+        
+        @non_admin_router.callback_query()
+        async def handle_non_admin_callbacks(callback: CallbackQuery):
+            """Обработчик для всех callback'ов от не-админов"""
+            if callback.from_user and callback.from_user.id not in config.ADMIN_IDS:
+                # НЕ ОТВЕЧАЕМ - просто игнорируем
+                return
+        
+        dp.include_router(non_admin_router)
         
         # Инициализация планировщика напоминаний
-        from services.reminders import reminder_service
+        from services.reminder_service import reminder_service
         reminder_service.set_bot(bot)
         await reminder_service.start_scheduler()
+        
+        # Инициализация планировщика постов
+        from services.post_scheduler import post_scheduler
+        post_scheduler.set_bot(bot)
+        await post_scheduler.start_scheduler()
         
         logger.info("Bot startup completed")
         
@@ -63,8 +90,12 @@ async def on_shutdown():
     """Очистка при завершении"""
     try:
         # Остановка планировщика напоминаний
-        from services.reminders import reminder_service
+        from services.reminder_service import reminder_service
         await reminder_service.stop_scheduler()
+        
+        # Остановка планировщика постов
+        from services.post_scheduler import post_scheduler
+        await post_scheduler.stop_scheduler()
         
         await db.close()
         logger.info("Database connection closed")
@@ -74,12 +105,13 @@ async def on_shutdown():
 
 async def main():
     """Главная функция"""
+    shutdown_event = asyncio.Event()
+    
     try:
         # Обработчики сигналов для graceful shutdown
         def signal_handler(signum, _frame):
-            logger.info("Received signal %s, shutting down...", signum)
-            asyncio.create_task(on_shutdown())
-            sys.exit(0)
+            logger.info("Received signal %s, initiating graceful shutdown...", signum)
+            shutdown_event.set()
         
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
@@ -89,7 +121,26 @@ async def main():
         
         # Запуск бота
         logger.info("Starting bot...")
-        await dp.start_polling(bot)
+        
+        # Создаем задачу для polling
+        polling_task = asyncio.create_task(dp.start_polling(bot))
+        
+        # Ждем сигнала завершения или ошибки
+        try:
+            await asyncio.wait_for(shutdown_event.wait(), timeout=None)
+            logger.info("Shutdown signal received, stopping bot...")
+        except asyncio.TimeoutError:
+            logger.info("Bot running normally...")
+        except Exception as e:
+            logger.error("Error during polling: %s", e)
+            raise
+        finally:
+            # Останавливаем polling
+            polling_task.cancel()
+            try:
+                await polling_task
+            except asyncio.CancelledError:
+                logger.info("Bot polling stopped")
         
     except Exception as e:
         logger.error("Bot error: %s", e)

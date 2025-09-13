@@ -1,7 +1,7 @@
 """
-@file: handlers/ai.py
+@file: handlers/ai_handlers.py
 @description: Обработчики AI функций (YandexGPT)
-@dependencies: services/ai.py, utils/keyboards.py, utils/filters.py
+@dependencies: services/ai_service.py, utils/keyboards.py, utils/filters.py
 @created: 2025-09-13
 """
 
@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKe
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
-from services.ai import ai_service
+from services.ai_service import ai_service
 from utils.keyboards import get_main_menu_keyboard
 from utils.filters import IsConfigAdminFilter
 from utils.logging import get_logger
@@ -38,7 +38,7 @@ async def cmd_ai(message: Message):
             [InlineKeyboardButton(text="📝 Улучшить текст", callback_data="ai_improve_text")],
             [InlineKeyboardButton(text="📄 Создать аннотацию", callback_data="ai_annotation")],
             [InlineKeyboardButton(text="🔧 Настройки AI", callback_data="ai_settings")],
-            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
         ])
         
         await message.answer(
@@ -256,11 +256,11 @@ async def process_text_improvement(message: Message, text: str):
         logger.error("Failed to process text improvement: %s", e)
         await message.answer("❌ Ошибка при улучшении текста.")
 
-@router.callback_query(F.data == "back_to_main", admin_filter)
-async def callback_back_to_main(callback: CallbackQuery):
-    """Возврат в главное меню"""
+@router.callback_query(F.data == "back_to_admin", admin_filter)
+async def callback_back_to_admin(callback: CallbackQuery):
+    """Возврат в админ-панель"""
     await callback.message.edit_text(
-        "🏠 <b>Главное меню</b>\n\n"
+        "👑 <b>Админ панель CtrlBot</b>\n\n"
         "Выберите действие:",
         reply_markup=get_main_menu_keyboard()
     )

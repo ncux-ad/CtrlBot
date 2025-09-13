@@ -1,7 +1,7 @@
 """
-@file: handlers/reminders.py
+@file: handlers/reminder_handlers.py
 @description: Обработчики напоминаний и уведомлений
-@dependencies: services/reminders.py, utils/keyboards.py, utils/filters.py
+@dependencies: services/reminder_service.py, utils/keyboards.py, utils/filters.py
 @created: 2025-09-13
 """
 
@@ -11,7 +11,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
 
-from services.reminders import reminder_service
+from services.reminder_service import reminder_service
 from utils.keyboards import get_main_menu_keyboard
 from utils.filters import IsConfigAdminFilter
 from utils.logging import get_logger
@@ -49,7 +49,7 @@ async def cmd_reminders(message: Message):
             [InlineKeyboardButton(text="📋 Мои напоминания", callback_data="my_reminders")],
             [InlineKeyboardButton(text="➕ Создать напоминание", callback_data="create_reminder")],
             [InlineKeyboardButton(text="⚙️ Настройки", callback_data="reminder_settings")],
-            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
         ])
         
         await message.answer(
@@ -175,11 +175,11 @@ async def callback_delete_reminder(callback: CallbackQuery):
         logger.error("Failed to delete reminder: %s", e)
         await callback.answer("❌ Ошибка удаления напоминания", show_alert=True)
 
-@router.callback_query(F.data == "back_to_main", admin_filter)
-async def callback_back_to_main(callback: CallbackQuery):
-    """Возврат в главное меню"""
+@router.callback_query(F.data == "back_to_admin", admin_filter)
+async def callback_back_to_admin(callback: CallbackQuery):
+    """Возврат в админ-панель"""
     await callback.message.edit_text(
-        "🏠 <b>Главное меню</b>\n\n"
+        "👑 <b>Админ панель CtrlBot</b>\n\n"
         "Выберите действие:",
         reply_markup=get_main_menu_keyboard()
     )

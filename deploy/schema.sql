@@ -27,6 +27,7 @@ end $$;
 create table if not exists posts (
   id bigserial primary key,
   channel_id bigint not null references channels(id) on delete cascade,
+  user_id bigint not null,
   title text,
   body_md text not null,
   status post_status default 'draft',

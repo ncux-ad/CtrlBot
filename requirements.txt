@@ -5,6 +5,7 @@ psycopg2-binary==2.*
 pandas==2.*
 openpyxl==3.*
 python-dotenv==1.*
+pytz==2024.*
 ruff==0.*
 black==24.*
 pytest==8.*

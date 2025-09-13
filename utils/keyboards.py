@@ -16,12 +16,20 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
 def get_post_actions_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура для действий с постом"""
     keyboard = [
+        [InlineKeyboardButton(text="✅ Опубликовать", callback_data="publish_post")],
+        [InlineKeyboardButton(text="📅 Запланировать", callback_data="schedule_post")],
+        [InlineKeyboardButton(text="⚙️ Дополнительно", callback_data="post_advanced")],
+        [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_post")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+def get_post_advanced_keyboard() -> InlineKeyboardMarkup:
+    """Расширенная клавиатура для дополнительных действий с постом"""
+    keyboard = [
         [InlineKeyboardButton(text="👁️ Предпросмотр", callback_data="preview_post")],
         [InlineKeyboardButton(text="📝 Пример Markdown", callback_data="markdown_example")],
         [InlineKeyboardButton(text="🏷️ Добавить теги", callback_data="add_tags")],
-        [InlineKeyboardButton(text="📅 Запланировать", callback_data="schedule_post")],
-        [InlineKeyboardButton(text="✅ Опубликовать", callback_data="publish_post")],
-        [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_post")]
+        [InlineKeyboardButton(text="🔙 Назад к посту", callback_data="back_to_post")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

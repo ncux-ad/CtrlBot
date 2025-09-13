@@ -1,0 +1,3 @@
+@echo off
+echo 📋 Просмотр логов CtrlBot...
+docker-compose -f docker-compose.dev.yml logs ctrlbot -f

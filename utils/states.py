@@ -10,6 +10,7 @@ class PostCreationStates(StatesGroup):
     add_tags = State()  # Добавление тегов
     choose_series = State()  # Выбор серии
     schedule = State()  # Планирование публикации
+    enter_time = State()  # Ввод времени публикации
     confirm = State()  # Подтверждение
 
 class AdminStates(StatesGroup):

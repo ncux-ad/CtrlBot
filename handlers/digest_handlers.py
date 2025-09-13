@@ -1,5 +1,5 @@
 """
-@file: handlers/digest.py
+@file: handlers/digest_handlers.py
 @description: Обработчики дайджестов и экспорта
 @dependencies: utils/keyboards.py, utils/filters.py
 @created: 2025-09-13

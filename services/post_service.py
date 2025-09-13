@@ -2,6 +2,7 @@
 
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
+from utils.timezone_utils import to_utc
 import logging
 
 from database import db
@@ -12,40 +13,95 @@ logger = logging.getLogger(__name__)
 class PostService:
     """Сервис для работы с постами"""
     
-    async def create_post(self, channel_id: int, title: Optional[str], 
+    async def get_channel_id_by_tg_id(self, tg_channel_id: int) -> Optional[int]:
+        """Получает ID канала по Telegram channel ID"""
+        try:
+            query = "SELECT id FROM channels WHERE tg_channel_id = $1"
+            return await db.fetch_val(query, tg_channel_id)
+        except Exception as e:
+            logger.error("Failed to get channel ID for tg_channel_id %s: %s", tg_channel_id, e)
+            return None
+    
+    async def create_post(self, tg_channel_id: int, title: Optional[str], 
                          body_md: str, user_id: int, series_id: Optional[int] = None,
                          scheduled_at: Optional[datetime] = None, tag_ids: Optional[List[int]] = None) -> int:
         """Создает новый пост"""
+        logger.info("=== НАЧАЛО СОЗДАНИЯ ПОСТА В БД ===")
+        logger.info(f"📢 TG Channel ID: {tg_channel_id}")
+        logger.info(f"📝 Title: {title}")
+        logger.info(f"📄 Body length: {len(body_md)} chars")
+        logger.info(f"👤 User ID: {user_id}")
+        logger.info(f"📚 Series ID: {series_id}")
+        logger.info(f"⏰ Scheduled at: {scheduled_at}")
+        logger.info(f"🏷️ Tag IDs: {tag_ids}")
+        
         try:
+            # Получаем ID канала из базы
+            logger.info("🔍 Ищем ID канала в базе данных")
+            channel_id = await self.get_channel_id_by_tg_id(tg_channel_id)
+            if not channel_id:
+                logger.error(f"❌ Канал с tg_channel_id {tg_channel_id} не найден")
+                raise ValueError(f"Channel with tg_channel_id {tg_channel_id} not found")
+            logger.info(f"✅ Найден channel_id: {channel_id}")
+            
             # Определяем статус
             status = 'scheduled' if scheduled_at else 'draft'
+            logger.info(f"📊 Статус поста: {status}")
             
+            # Конвертируем время в UTC для хранения в БД
+            if scheduled_at:
+                scheduled_at_utc = to_utc(scheduled_at)
+                logger.info(f"🕐 Время в UTC: {scheduled_at_utc}")
+            else:
+                scheduled_at_utc = None
+                logger.info("🕐 Время не указано")
+            
+            logger.info("💾 Выполняем INSERT в таблицу posts")
             query = """
-                INSERT INTO posts (channel_id, title, body_md, status, series_id, scheduled_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                INSERT INTO posts (channel_id, user_id, title, body_md, status, series_id, scheduled_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
                 RETURNING id
             """
-            post_id = await db.fetch_val(query, channel_id, title, body_md, status, series_id, scheduled_at)
+            post_id = await db.fetch_val(query, channel_id, user_id, title, body_md, status, series_id, scheduled_at_utc)
+            logger.info(f"✅ Пост сохранен в БД с ID: {post_id}")
             
             # Добавляем теги если есть
             if tag_ids:
+                logger.info(f"🏷️ Добавляем {len(tag_ids)} тегов к посту")
                 from services.tags import tag_service
                 for tag_id in tag_ids:
+                    logger.info(f"🏷️ Добавляем тег ID: {tag_id}")
                     await tag_service.add_tag_to_post(post_id, tag_id)
                 
                 # Обновляем кеш тегов
+                logger.info("🔄 Обновляем кеш тегов")
                 await tag_service.update_post_tags_cache(post_id)
+            else:
+                logger.info("🏷️ Теги не указаны")
             
             # Если есть серия, увеличиваем номер
             if series_id:
+                logger.info(f"📚 Увеличиваем номер серии: {series_id}")
                 from services.series import series_service
                 await series_service.increment_series_number(series_id)
+            else:
+                logger.info("📚 Серия не указана")
             
+            logger.info("✅ ПОСТ УСПЕШНО СОЗДАН")
             logger.info("Post created: %s for channel %s by user %s (series: %s, tags: %s)", 
                        post_id, channel_id, user_id, series_id, tag_ids)
             return post_id
         except Exception as e:
+            logger.error("❌ ОШИБКА СОЗДАНИЯ ПОСТА")
             logger.error("Failed to create post: %s", e)
+            logger.error("📊 Параметры на момент ошибки:")
+            logger.error("  - tg_channel_id: %s", tg_channel_id)
+            logger.error("  - title: %s", title)
+            logger.error("  - body_md length: %s", len(body_md) if body_md else 0)
+            logger.error("  - user_id: %s", user_id)
+            logger.error("  - series_id: %s", series_id)
+            logger.error("  - scheduled_at: %s", scheduled_at)
+            logger.error("  - tag_ids: %s", tag_ids)
             raise
     
     async def get_post(self, post_id: int) -> Optional[Dict[str, Any]]:
@@ -180,6 +236,8 @@ class PostService:
     async def publish_post(self, post_id: int, message_id: int) -> bool:
         """Помечает пост как опубликованный"""
         try:
+            logger.info(f"🔄 Обновляем статус поста {post_id} на 'published' с message_id {message_id}")
+            
             query = """
                 UPDATE posts 
                 SET status = 'published', 
@@ -188,11 +246,68 @@ class PostService:
                     updated_at = NOW()
                 WHERE id = $1
             """
-            await db.execute(query, post_id, message_id)
+            
+            result = await db.execute(query, post_id, message_id)
+            logger.info(f"✅ SQL UPDATE выполнен: {result}")
+            
+            # Проверяем, что пост действительно обновился
+            updated_post = await db.fetch_one("""
+                SELECT id, status, published_at, message_id 
+                FROM posts 
+                WHERE id = $1
+            """, post_id)
+            
+            if updated_post:
+                logger.info(f"✅ Подтверждение обновления: ID={updated_post['id']}, status={updated_post['status']}, published_at={updated_post['published_at']}, message_id={updated_post['message_id']}")
+            else:
+                logger.error(f"❌ Пост {post_id} не найден после обновления!")
+            
             logger.info("Post %s published with message_id %s", post_id, message_id)
             return True
         except Exception as e:
             logger.error("Failed to publish post %s: %s", post_id, e)
+            raise
+    
+    async def publish_scheduled_posts(self, bot) -> int:
+        """Публикует все готовые к публикации посты"""
+        logger.info("=== НАЧАЛО ПУБЛИКАЦИИ ОТЛОЖЕННЫХ ПОСТОВ ===")
+        
+        try:
+            # Получаем посты для публикации
+            scheduled_posts = await self.get_scheduled_posts()
+            logger.info(f"📋 Найдено {len(scheduled_posts)} постов для публикации")
+            
+            if not scheduled_posts:
+                logger.info("📭 Нет постов для публикации")
+                return 0
+            
+            published_count = 0
+            
+            for post in scheduled_posts:
+                try:
+                    logger.info(f"📤 Публикуем пост ID {post['id']}: '{post['body_md'][:50]}...'")
+                    
+                    # Отправляем пост в канал
+                    sent_message = await bot.send_message(
+                        chat_id=post['tg_channel_id'],
+                        text=post['body_md']
+                    )
+                    
+                    # Обновляем статус поста
+                    await self.publish_post(post['id'], sent_message.message_id)
+                    
+                    published_count += 1
+                    logger.info(f"✅ Пост {post['id']} успешно опубликован в канал {post['tg_channel_id']}")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Ошибка публикации поста {post['id']}: {e}")
+                    continue
+            
+            logger.info(f"✅ ПУБЛИКАЦИЯ ЗАВЕРШЕНА: {published_count}/{len(scheduled_posts)} постов")
+            return published_count
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка публикации отложенных постов: {e}")
             raise
     
     async def delete_post(self, post_id: int) -> bool:

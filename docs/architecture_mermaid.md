@@ -9,7 +9,7 @@ flowchart TD
     B --> C[aiogram Dispatcher]
 
     subgraph Handlers
-        C --> H1[handlers/posts.py]
+        C --> H1[handlers/post_handlers.py]
         C --> H2[handlers/reminders.py]
         C --> H3[handlers/digest.py]
         C --> H4[handlers/admin.py]
