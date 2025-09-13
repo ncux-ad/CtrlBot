@@ -253,6 +253,17 @@ class PostPublisher:
         try:
             text = post_data.get('body_md', '')
             entities = post_data.get('entities')
+            media_data = post_data.get('media_data')
+            
+            # Если есть медиа, отправляем медиа с подписью
+            if media_data:
+                logger.info(f"📷 Отправляем медиа: {media_data['type']}")
+                return await self._send_media_with_caption(
+                    channel_id, 
+                    media_data, 
+                    text, 
+                    entities
+                )
             
             # Если есть entities, используем их
             if entities:
@@ -263,6 +274,77 @@ class PostPublisher:
             
         except Exception as e:
             logger.error(f"❌ Ошибка публикации в канал {channel_id}: {e}")
+            return None
+    
+    async def _send_media_with_caption(
+        self, 
+        chat_id: int, 
+        media_data: Dict[str, Any], 
+        caption: str = "", 
+        caption_entities: Optional[List] = None
+    ) -> Optional[Message]:
+        """Отправляет медиа с подписью"""
+        try:
+            media_type = media_data.get('type')
+            file_id = media_data.get('file_id')
+            
+            if not media_type or not file_id:
+                logger.error("❌ Неполные данные медиа")
+                return None
+            
+            # Преобразуем entities для caption
+            caption_entities_list = None
+            if caption_entities:
+                from utils.entities import entities_from_dict
+                caption_entities_list = entities_from_dict(caption_entities)
+            
+            # Отправляем медиа в зависимости от типа
+            if media_type == "photo":
+                return await self.bot.send_photo(
+                    chat_id=chat_id,
+                    photo=file_id,
+                    caption=caption,
+                    caption_entities=caption_entities_list
+                )
+            elif media_type == "video":
+                return await self.bot.send_video(
+                    chat_id=chat_id,
+                    video=file_id,
+                    caption=caption,
+                    caption_entities=caption_entities_list
+                )
+            elif media_type == "document":
+                return await self.bot.send_document(
+                    chat_id=chat_id,
+                    document=file_id,
+                    caption=caption,
+                    caption_entities=caption_entities_list
+                )
+            elif media_type == "voice":
+                return await self.bot.send_voice(
+                    chat_id=chat_id,
+                    voice=file_id,
+                    caption=caption,
+                    caption_entities=caption_entities_list
+                )
+            elif media_type == "audio":
+                return await self.bot.send_audio(
+                    chat_id=chat_id,
+                    audio=file_id,
+                    caption=caption,
+                    caption_entities=caption_entities_list
+                )
+            elif media_type == "video_note":
+                return await self.bot.send_video_note(
+                    chat_id=chat_id,
+                    video_note=file_id
+                )
+            else:
+                logger.error(f"❌ Неподдерживаемый тип медиа: {media_type}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Ошибка отправки медиа {media_type}: {e}")
             return None
     
     async def _send_with_entities(
@@ -362,6 +444,16 @@ class PostPublisher:
         except Exception as e:
             logger.error(f"❌ Ошибка обновления поста {post_id} в БД: {e}")
             raise
+    
+    async def delete_message_from_channel(self, channel_id: int, message_id: int) -> bool:
+        """Удаляет сообщение из канала"""
+        try:
+            await self.bot.delete_message(chat_id=channel_id, message_id=message_id)
+            logger.info(f"✅ Сообщение {message_id} удалено из канала {channel_id}")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Ошибка удаления сообщения {message_id} из канала {channel_id}: {e}")
+            return False
 
 # Глобальный экземпляр (будет инициализирован в bot.py)
 publisher = None

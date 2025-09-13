@@ -8,6 +8,7 @@ from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.asyncio import AsyncIOExecutor
 
 from services.post_service import post_service
+from database import db
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class PostScheduler:
             logger.error(f"Failed to stop post scheduler: {e}")
     
     async def _check_and_publish_posts(self):
-        """Проверяет и публикует отложенные посты"""
+        """Проверяет и публикует отложенные посты (оптимизированная версия)"""
         try:
             logger.info("🔍 Проверяем отложенные посты...")
             
@@ -85,6 +86,41 @@ class PostScheduler:
                 
         except Exception as e:
             logger.error(f"Error in post scheduler: {e}")
+    
+    async def get_scheduler_stats(self) -> dict:
+        """Получает статистику планировщика"""
+        try:
+            # Получаем статистику по постам
+            stats_query = """
+                SELECT 
+                    status,
+                    COUNT(*) as count
+                FROM posts 
+                WHERE scheduled_at IS NOT NULL
+                GROUP BY status
+            """
+            results = await db.fetch_all(stats_query)
+            status_stats = {row['status']: row['count'] for row in results}
+            
+            # Получаем количество постов для публикации в ближайший час
+            upcoming_query = """
+                SELECT COUNT(*) as count
+                FROM posts 
+                WHERE status = 'scheduled' 
+                AND scheduled_at <= NOW() + INTERVAL '1 hour'
+                AND scheduled_at > NOW()
+            """
+            upcoming_count = await db.fetch_val(upcoming_query)
+            
+            return {
+                "status_stats": status_stats,
+                "upcoming_posts": upcoming_count,
+                "scheduler_running": self.is_running,
+                "bot_available": self.bot is not None
+            }
+        except Exception as e:
+            logger.error(f"Failed to get scheduler stats: {e}")
+            return {"error": str(e)}
     
     async def get_scheduler_status(self) -> dict:
         """Получает статус планировщика"""

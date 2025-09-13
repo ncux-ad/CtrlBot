@@ -31,6 +31,9 @@ create table if not exists posts (
   title text,
   body_md text not null,
   entities jsonb,  -- Telegram entities для сохранения форматирования
+  media_type text,  -- Тип медиа: photo, video, document, voice, audio, video_note
+  media_file_id text,  -- Telegram file_id медиа
+  media_data jsonb,  -- Дополнительные данные медиа (размеры, длительность и т.д.)
   status post_status default 'draft',
   scheduled_at timestamptz,
   published_at timestamptz,

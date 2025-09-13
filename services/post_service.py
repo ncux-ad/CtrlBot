@@ -25,7 +25,7 @@ class PostService:
     async def create_post(self, tg_channel_id: int, title: Optional[str], 
                          body_md: str, user_id: int, series_id: Optional[int] = None,
                          scheduled_at: Optional[datetime] = None, tag_ids: Optional[List[int]] = None,
-                         entities: Optional[List] = None) -> int:
+                         entities: Optional[List] = None, media_data: Optional[dict] = None) -> int:
         """Создает новый пост"""
         logger.info("=== НАЧАЛО СОЗДАНИЯ ПОСТА В БД ===")
         logger.info(f"📢 TG Channel ID: {tg_channel_id}")
@@ -36,6 +36,7 @@ class PostService:
         logger.info(f"⏰ Scheduled at: {scheduled_at}")
         logger.info(f"🏷️ Tag IDs: {tag_ids}")
         logger.info(f"🎨 Entities: {len(entities) if entities else 0}")
+        logger.info(f"📷 Медиа: {media_data['type'] if media_data else 'Нет'}")
         
         try:
             # Получаем ID канала из базы
@@ -67,13 +68,27 @@ class PostService:
             else:
                 logger.info("🎨 Entities не указаны")
             
+            # Обрабатываем медиа-данные
+            media_type = None
+            media_file_id = None
+            media_data_json = None
+            if media_data:
+                media_type = media_data.get('type')
+                media_file_id = media_data.get('file_id')
+                # Сохраняем все данные медиа как JSON
+                import json
+                media_data_json = json.dumps(media_data, ensure_ascii=False)
+                logger.info(f"📷 Медиа сохранено: {media_type} - {media_file_id}")
+            else:
+                logger.info("📷 Медиа не указано")
+            
             logger.info("💾 Выполняем INSERT в таблицу posts")
             query = """
-                INSERT INTO posts (channel_id, user_id, title, body_md, entities, status, series_id, scheduled_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                INSERT INTO posts (channel_id, user_id, title, body_md, entities, media_type, media_file_id, media_data, status, series_id, scheduled_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
                 RETURNING id
             """
-            post_id = await db.fetch_val(query, channel_id, user_id, title, body_md, entities_json, status, series_id, scheduled_at_utc)
+            post_id = await db.fetch_val(query, channel_id, user_id, title, body_md, entities_json, media_type, media_file_id, media_data_json, status, series_id, scheduled_at_utc)
             logger.info(f"✅ Пост сохранен в БД с ID: {post_id}")
             
             # Добавляем теги если есть
@@ -136,6 +151,16 @@ class PostService:
                 from utils.entities import entities_from_json
                 post_dict['entities'] = entities_from_json(post_dict['entities'])
                 logger.info(f"🎨 Восстановлено {len(post_dict['entities'])} entities для поста {post_id}")
+            
+            # Восстанавливаем медиа-данные из JSON
+            if post_dict.get('media_data'):
+                import json
+                try:
+                    post_dict['media_data'] = json.loads(post_dict['media_data'])
+                    logger.info(f"📷 Восстановлены медиа-данные для поста {post_id}: {post_dict.get('media_type')}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"❌ Ошибка парсинга медиа-данных для поста {post_id}: {e}")
+                    post_dict['media_data'] = None
             
             return post_dict
         except Exception as e:
@@ -239,18 +264,42 @@ class PostService:
             raise
     
     async def get_scheduled_posts(self) -> List[Dict[str, Any]]:
-        """Получает посты для публикации"""
+        """Получает посты для публикации (оптимизированная версия)"""
         try:
+            # Оптимизированный запрос с точным фильтром по времени
+            # Использует индекс idx_posts_scheduled_status_time
             query = """
                 SELECT p.*, c.tg_channel_id, c.title as channel_title
                 FROM posts p
                 JOIN channels c ON p.channel_id = c.id
                 WHERE p.status = 'scheduled' 
                 AND p.scheduled_at <= NOW()
+                AND p.scheduled_at > NOW() - INTERVAL '1 hour'  -- Только посты за последний час
                 ORDER BY p.scheduled_at ASC
+                LIMIT 100  -- Ограничиваем количество постов за раз
             """
             results = await db.fetch_all(query)
-            return [dict(row) for row in results]
+            posts = [dict(row) for row in results]
+            
+            logger.info(f"🔍 Найдено {len(posts)} постов для публикации (оптимизированный запрос)")
+            
+            # Восстанавливаем entities и медиа-данные для каждого поста
+            for post in posts:
+                # Восстанавливаем entities из JSON
+                if post.get('entities'):
+                    from utils.entities import entities_from_json
+                    post['entities'] = entities_from_json(post['entities'])
+                
+                # Восстанавливаем медиа-данные из JSON
+                if post.get('media_data'):
+                    import json
+                    try:
+                        post['media_data'] = json.loads(post['media_data'])
+                    except json.JSONDecodeError as e:
+                        logger.error(f"❌ Ошибка парсинга медиа-данных для поста {post['id']}: {e}")
+                        post['media_data'] = None
+            
+            return posts
         except Exception as e:
             logger.error("Failed to get scheduled posts: %s", e)
             raise
@@ -291,7 +340,7 @@ class PostService:
             raise
     
     async def publish_scheduled_posts(self, bot) -> int:
-        """Публикует все готовые к публикации посты"""
+        """Публикует все готовые к публикации посты (оптимизированная версия)"""
         logger.info("=== НАЧАЛО ПУБЛИКАЦИИ ОТЛОЖЕННЫХ ПОСТОВ ===")
         
         try:
@@ -304,6 +353,7 @@ class PostService:
                 return 0
             
             published_count = 0
+            failed_posts = []
             
             for post in scheduled_posts:
                 try:
@@ -316,7 +366,8 @@ class PostService:
                     post_data = {
                         'id': post['id'],
                         'body_md': post['body_md'],
-                        'entities': post.get('entities')  # Если есть entities
+                        'entities': post.get('entities'),  # Если есть entities
+                        'media_data': post.get('media_data')  # Если есть медиа
                     }
                     
                     results = await publisher.publish_post(
@@ -330,17 +381,47 @@ class PostService:
                         logger.info(f"✅ Пост {post['id']} успешно опубликован в канал {post['tg_channel_id']}")
                     else:
                         logger.error(f"❌ Не удалось опубликовать пост {post['id']}")
+                        failed_posts.append(post['id'])
                     
                 except Exception as e:
                     logger.error(f"❌ Ошибка публикации поста {post['id']}: {e}")
+                    failed_posts.append(post['id'])
                     continue
             
+            # Помечаем неудачные посты (старше 24 часов)
+            await self._mark_failed_posts()
+            
             logger.info(f"✅ ПУБЛИКАЦИЯ ЗАВЕРШЕНА: {published_count}/{len(scheduled_posts)} постов")
+            if failed_posts:
+                logger.warning(f"⚠️ Не удалось опубликовать посты: {failed_posts}")
+            
             return published_count
             
         except Exception as e:
             logger.error(f"❌ Ошибка публикации отложенных постов: {e}")
             raise
+    
+    async def _mark_failed_posts(self):
+        """Помечает посты как failed, если они не были опубликованы в течение 24 часов"""
+        try:
+            # Помечаем как failed только посты, которые действительно не удалось опубликовать
+            # Это не очистка, а корректировка статуса для постов с ошибками
+            query = """
+                UPDATE posts 
+                SET status = 'failed', updated_at = NOW()
+                WHERE status = 'scheduled' 
+                AND scheduled_at < NOW() - INTERVAL '24 hours'
+                AND id NOT IN (
+                    SELECT id FROM posts 
+                    WHERE status = 'published' 
+                    AND published_at IS NOT NULL
+                )
+            """
+            result = await db.execute(query)
+            if result > 0:
+                logger.info(f"⚠️ Помечено {result} постов как failed (не удалось опубликовать)")
+        except Exception as e:
+            logger.error(f"❌ Ошибка обработки неудачных постов: {e}")
     
     async def delete_post(self, post_id: int) -> bool:
         """Удаляет пост (мягкое удаление)"""

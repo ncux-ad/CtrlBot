@@ -538,12 +538,14 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
         series_id = data.get('series_id')
         scheduled_at = data.get('scheduled_at')
         entities = data.get('entities', [])
+        media_data = data.get('media_data')
         
         logger.info(f"📝 Текст поста: '{post_text}'")
         logger.info(f"🏷️ Выбранные теги: {selected_tags}")
         logger.info(f"📚 ID серии: {series_id}")
         logger.info(f"⏰ Запланировано на: {scheduled_at}")
         logger.info(f"🎨 Entities: {len(entities) if entities else 0}")
+        logger.info(f"📷 Медиа: {media_data['type'] if media_data else 'Нет'}")
         
         # Получаем ID канала из конфигурации
         from config import config
@@ -568,7 +570,8 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
             series_id=series_id,
             scheduled_at=scheduled_at,
             tag_ids=selected_tags,
-            entities=entities
+            entities=entities,
+            media_data=media_data
         )
         logger.info(f"✅ Пост создан с ID: {post_id}")
         
@@ -640,7 +643,8 @@ async def callback_my_posts(callback: CallbackQuery):
                 'draft': '📝',
                 'scheduled': '⏰',
                 'published': '✅',
-                'deleted': '❌'
+                'deleted': '❌',
+                'failed': '⚠️'
             }.get(post['status'], '❓')
             
             text += f"{i}. {status_emoji} *#{post['id']}*\n"
@@ -706,7 +710,8 @@ async def callback_load_more_posts(callback: CallbackQuery):
                 'draft': '📝',
                 'scheduled': '⏰',
                 'published': '✅',
-                'deleted': '❌'
+                'deleted': '❌',
+                'failed': '⚠️'
             }.get(post['status'], '❓')
             
             text += f"{i}. {status_emoji} *#{post['id']}*\n"
@@ -807,7 +812,9 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
     
     data = await state.get_data()
     post_text = data.get('post_text', '')
+    media_data = data.get('media_data')
     logger.info(f"📝 Получен текст для публикации: '{post_text}'")
+    logger.info(f"📷 Медиа: {media_data['type'] if media_data else 'Нет'}")
     
     try:
         # Получаем ID каналов из конфигурации
@@ -830,21 +837,37 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
             await callback.answer()
             return
         
-        # Используем PostPublisher для публикации
+        # Получаем entities из FSM данных
+        entities = data.get('entities', [])
+        logger.info(f"🎨 Entities из FSM: {len(entities) if entities else 0}")
+        
+        # Сначала создаем пост в БД
+        logger.info("💾 Создаем пост в базе данных")
+        post_id = await post_service.create_post(
+            tg_channel_id=channel_ids[0],  # Используем первый канал
+            title=None,  # Пока без заголовка
+            body_md=post_text,
+            user_id=callback.from_user.id,
+            series_id=None,  # Для простой публикации серия не нужна
+            scheduled_at=None,  # Публикуем сразу
+            tag_ids=[],  # Для простой публикации теги не нужны
+            entities=entities,
+            media_data=media_data
+        )
+        logger.info(f"✅ Пост создан в БД с ID: {post_id}")
+        
+        # Теперь публикуем через PostPublisher
         from services.publisher import get_publisher
         
-        # Получаем entities из FSM
-        data = await state.get_data()
-        entities = data.get('entities', [])
-        
         post_data = {
-            'id': None,  # Для простой публикации ID не нужен
+            'id': post_id,  # Теперь у нас есть ID поста
             'body_md': post_text,
-            'entities': entities
+            'entities': entities,
+            'media_data': media_data  # Добавляем медиа-данные
         }
         
         publisher = get_publisher()
-        results = await publisher.publish_post(post_data, channel_ids, update_db=False)
+        results = await publisher.publish_post(post_data, channel_ids, update_db=True)
         
         published_channels = [result['channel_id'] for result in results['success']]
         failed_channels = [(result['channel_id'], result['error']) for result in results['failed']]
@@ -852,6 +875,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
         # Формируем сообщение о результате
         if published_channels:
             result_text = f"✅ *Пост успешно опубликован!*\n\n"
+            result_text += f"📝 *ID поста:* {post_id}\n"
             result_text += f"📝 *Текст:*\n{post_text}\n\n"
             result_text += f"📢 *Опубликовано в каналы:* {len(published_channels)}\n"
             
@@ -859,6 +883,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
                 result_text += f"❌ *Ошибки:* {len(failed_channels)} каналов\n"
         else:
             result_text = "❌ *Не удалось опубликовать пост*\n\n"
+            result_text += f"📝 *ID поста:* {post_id}\n"
             result_text += f"📝 *Текст:*\n{post_text}\n\n"
             result_text += "Проверьте права бота в каналах."
         
@@ -868,9 +893,6 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
             ])
         )
-        
-        # TODO: Сохранить пост в БД
-        # post_id = await post_service.create_post(...)
         
         # Сбрасываем состояние
         await state.clear()
@@ -929,7 +951,8 @@ async def cmd_my_posts(message: Message):
                 'draft': '📝',
                 'scheduled': '⏰',
                 'published': '✅',
-                'deleted': '❌'
+                'deleted': '❌',
+                'failed': '⚠️'
             }.get(post['status'], '❓')
             
             text += f"{i}. {status_emoji} *#{post['id']}*\n"
@@ -1003,8 +1026,13 @@ _курсив_ - курсивный текст
 
 @router.message(StateFilter(PostCreationStates.enter_text))
 async def process_any_post_message(message: Message, state: FSMContext):
-    """Обработчик для создания поста с извлечением entities"""
+    """Обработчик для создания поста с извлечением entities и медиа"""
     logger.info("=== НАЧАЛО ОБРАБОТКИ СООБЩЕНИЯ ===")
+    
+    # Инициализируем переменные
+    text = ""
+    entities = None
+    media_data = None
     
     # Получаем текст из сообщения
     if message.text:
@@ -1024,6 +1052,89 @@ async def process_any_post_message(message: Message, state: FSMContext):
         await message.answer("❌ *Не удалось получить текст*\n\nСообщение не содержит текста.")
         return
     
+    # Обрабатываем медиа-файлы
+    if message.photo:
+        # Фото
+        photo = message.photo[-1]  # Берем самое большое фото
+        media_data = {
+            'type': 'photo',
+            'file_id': photo.file_id,
+            'file_unique_id': photo.file_unique_id,
+            'width': photo.width,
+            'height': photo.height,
+            'file_size': photo.file_size
+        }
+        logger.info(f"📷 Получено фото: {photo.file_id} ({photo.width}x{photo.height})")
+    elif message.video:
+        # Видео
+        video = message.video
+        media_data = {
+            'type': 'video',
+            'file_id': video.file_id,
+            'file_unique_id': video.file_unique_id,
+            'width': video.width,
+            'height': video.height,
+            'duration': video.duration,
+            'file_size': video.file_size
+        }
+        logger.info(f"📹 Получено видео: {video.file_id} ({video.width}x{video.height}, {video.duration}с)")
+    elif message.document:
+        # Документ
+        doc = message.document
+        media_data = {
+            'type': 'document',
+            'file_id': doc.file_id,
+            'file_unique_id': doc.file_unique_id,
+            'file_name': doc.file_name,
+            'mime_type': doc.mime_type,
+            'file_size': doc.file_size
+        }
+        logger.info(f"📄 Получен документ: {doc.file_name} ({doc.mime_type})")
+    elif message.video_note:
+        # Видео-заметка
+        video_note = message.video_note
+        media_data = {
+            'type': 'video_note',
+            'file_id': video_note.file_id,
+            'file_unique_id': video_note.file_unique_id,
+            'length': video_note.length,
+            'duration': video_note.duration,
+            'file_size': video_note.file_size
+        }
+        logger.info(f"🎥 Получена видео-заметка: {video_note.file_id} ({video_note.length}px, {video_note.duration}с)")
+    elif message.voice:
+        # Голосовое сообщение
+        voice = message.voice
+        media_data = {
+            'type': 'voice',
+            'file_id': voice.file_id,
+            'file_unique_id': voice.file_unique_id,
+            'duration': voice.duration,
+            'mime_type': voice.mime_type,
+            'file_size': voice.file_size
+        }
+        logger.info(f"🎤 Получено голосовое: {voice.file_id} ({voice.duration}с)")
+    elif message.audio:
+        # Аудио
+        audio = message.audio
+        media_data = {
+            'type': 'audio',
+            'file_id': audio.file_id,
+            'file_unique_id': audio.file_unique_id,
+            'duration': audio.duration,
+            'performer': audio.performer,
+            'title': audio.title,
+            'mime_type': audio.mime_type,
+            'file_size': audio.file_size
+        }
+        logger.info(f"🎵 Получено аудио: {audio.title or 'Без названия'} ({audio.duration}с)")
+    
+    # Если нет текста и нет медиа
+    if not text and not media_data:
+        logger.warning("❌ Сообщение не содержит ни текста, ни медиа")
+        await message.answer("❌ *Не удалось получить контент*\n\nСообщение не содержит текста или медиа-файлов.")
+        return
+    
     # Валидация текста
     logger.info("🔍 Начинаем валидацию текста")
     is_valid, error_msg = await post_service.validate_post_text(text)
@@ -1033,20 +1144,51 @@ async def process_any_post_message(message: Message, state: FSMContext):
         return
     logger.info("✅ Валидация прошла успешно")
     
-    # Сохраняем текст и entities
-    logger.info("💾 Сохраняем текст и entities в FSM state")
-    await state.update_data(post_text=text, entities=entities)
+    # Сохраняем текст, entities и медиа
+    logger.info("💾 Сохраняем текст, entities и медиа в FSM state")
+    await state.update_data(
+        post_text=text, 
+        entities=entities,
+        media_data=media_data
+    )
     await state.set_state(PostCreationStates.preview)
     logger.info("✅ FSM state обновлен")
     
-    # Показываем простой предпросмотр
+    # Показываем предпросмотр с медиа
     logger.info("👁️ Отправляем предпросмотр")
-    await message.answer(
-        f"👁️ *Предпросмотр поста:*\n\n{text}",
-        reply_markup=get_post_actions_keyboard()
-    )
-    logger.info("✅ Предпросмотр отправлен успешно")
     
+    if media_data:
+        # Предпросмотр с медиа
+        preview_text = f"👁️ *Предпросмотр поста:*\n\n"
+        if text:
+            preview_text += f"{text}\n\n"
+        
+        # Добавляем информацию о медиа
+        if media_data['type'] == 'photo':
+            preview_text += f"📷 *Фото* ({media_data['width']}x{media_data['height']})"
+        elif media_data['type'] == 'video':
+            preview_text += f"📹 *Видео* ({media_data['width']}x{media_data['height']}, {media_data['duration']}с)"
+        elif media_data['type'] == 'document':
+            preview_text += f"📄 *Документ*: {media_data['file_name']}"
+        elif media_data['type'] == 'video_note':
+            preview_text += f"🎥 *Видео-заметка* ({media_data['length']}px, {media_data['duration']}с)"
+        elif media_data['type'] == 'voice':
+            preview_text += f"🎤 *Голосовое сообщение* ({media_data['duration']}с)"
+        elif media_data['type'] == 'audio':
+            preview_text += f"🎵 *Аудио*: {media_data.get('title', 'Без названия')} ({media_data['duration']}с)"
+        
+        await message.answer(
+            preview_text,
+            reply_markup=get_post_actions_keyboard()
+        )
+    else:
+        # Простой текстовый предпросмотр
+        await message.answer(
+            f"👁️ *Предпросмотр поста:*\n\n{text}",
+            reply_markup=get_post_actions_keyboard()
+        )
+    
+    logger.info("✅ Предпросмотр отправлен успешно")
     logger.info("=== КОНЕЦ ОБРАБОТКИ СООБЩЕНИЯ ===")
 
 @router.message()

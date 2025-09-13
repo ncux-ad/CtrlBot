@@ -41,9 +41,10 @@ async def on_startup():
         logger.info("Database connected and schema initialized")
         
         # Регистрация обработчиков (только для админов)
-        from handlers import post_handlers, admin, reminder_handlers, digest_handlers, ai_handlers
+        from handlers import post_handlers, admin, reminder_handlers, digest_handlers, ai_handlers, post_deletion_handlers
         dp.include_router(admin.router)
         dp.include_router(post_handlers.router)
+        dp.include_router(post_deletion_handlers.router)
         dp.include_router(reminder_handlers.router)
         dp.include_router(digest_handlers.router)
         dp.include_router(ai_handlers.router)
