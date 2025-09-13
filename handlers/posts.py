@@ -392,6 +392,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
                     chat_id=channel_id,
                     text=post_text
                 )
+
                 
                 published_channels.append(channel_id)
                 logger.info(f"✅ Пост успешно опубликован в канал {channel_id}")
