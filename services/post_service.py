@@ -24,7 +24,8 @@ class PostService:
     
     async def create_post(self, tg_channel_id: int, title: Optional[str], 
                          body_md: str, user_id: int, series_id: Optional[int] = None,
-                         scheduled_at: Optional[datetime] = None, tag_ids: Optional[List[int]] = None) -> int:
+                         scheduled_at: Optional[datetime] = None, tag_ids: Optional[List[int]] = None,
+                         entities: Optional[List] = None) -> int:
         """Создает новый пост"""
         logger.info("=== НАЧАЛО СОЗДАНИЯ ПОСТА В БД ===")
         logger.info(f"📢 TG Channel ID: {tg_channel_id}")
@@ -34,6 +35,7 @@ class PostService:
         logger.info(f"📚 Series ID: {series_id}")
         logger.info(f"⏰ Scheduled at: {scheduled_at}")
         logger.info(f"🏷️ Tag IDs: {tag_ids}")
+        logger.info(f"🎨 Entities: {len(entities) if entities else 0}")
         
         try:
             # Получаем ID канала из базы
@@ -56,13 +58,22 @@ class PostService:
                 scheduled_at_utc = None
                 logger.info("🕐 Время не указано")
             
+            # Конвертируем entities в JSON для хранения в БД
+            entities_json = None
+            if entities:
+                from utils.entities import entities_to_json
+                entities_json = entities_to_json(entities)
+                logger.info(f"🎨 Entities сохранены в JSON: {len(entities_json)} символов")
+            else:
+                logger.info("🎨 Entities не указаны")
+            
             logger.info("💾 Выполняем INSERT в таблицу posts")
             query = """
-                INSERT INTO posts (channel_id, user_id, title, body_md, status, series_id, scheduled_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                INSERT INTO posts (channel_id, user_id, title, body_md, entities, status, series_id, scheduled_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
                 RETURNING id
             """
-            post_id = await db.fetch_val(query, channel_id, user_id, title, body_md, status, series_id, scheduled_at_utc)
+            post_id = await db.fetch_val(query, channel_id, user_id, title, body_md, entities_json, status, series_id, scheduled_at_utc)
             logger.info(f"✅ Пост сохранен в БД с ID: {post_id}")
             
             # Добавляем теги если есть
@@ -115,7 +126,18 @@ class PostService:
                 WHERE p.id = $1
             """
             result = await db.fetch_one(query, post_id)
-            return dict(result) if result else None
+            if not result:
+                return None
+            
+            post_dict = dict(result)
+            
+            # Восстанавливаем entities из JSON
+            if post_dict.get('entities'):
+                from utils.entities import entities_from_json
+                post_dict['entities'] = entities_from_json(post_dict['entities'])
+                logger.info(f"🎨 Восстановлено {len(post_dict['entities'])} entities для поста {post_id}")
+            
+            return post_dict
         except Exception as e:
             logger.error("Failed to get post %s: %s", post_id, e)
             raise
@@ -287,17 +309,27 @@ class PostService:
                 try:
                     logger.info(f"📤 Публикуем пост ID {post['id']}: '{post['body_md'][:50]}...'")
                     
-                    # Отправляем пост в канал
-                    sent_message = await bot.send_message(
-                        chat_id=post['tg_channel_id'],
-                        text=post['body_md']
+                    # Используем PostPublisher для публикации
+                    from services.publisher import get_publisher
+                    publisher = get_publisher()
+                    
+                    post_data = {
+                        'id': post['id'],
+                        'body_md': post['body_md'],
+                        'entities': post.get('entities')  # Если есть entities
+                    }
+                    
+                    results = await publisher.publish_post(
+                        post_data, 
+                        [post['tg_channel_id']], 
+                        update_db=True
                     )
                     
-                    # Обновляем статус поста
-                    await self.publish_post(post['id'], sent_message.message_id)
-                    
-                    published_count += 1
-                    logger.info(f"✅ Пост {post['id']} успешно опубликован в канал {post['tg_channel_id']}")
+                    if results['success_count'] > 0:
+                        published_count += 1
+                        logger.info(f"✅ Пост {post['id']} успешно опубликован в канал {post['tg_channel_id']}")
+                    else:
+                        logger.error(f"❌ Не удалось опубликовать пост {post['id']}")
                     
                 except Exception as e:
                     logger.error(f"❌ Ошибка публикации поста {post['id']}: {e}")

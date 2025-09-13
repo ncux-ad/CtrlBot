@@ -97,7 +97,7 @@ class ReminderService:
             # Формируем сообщение
             current_time = datetime.now().strftime("%H:%M")
             message = (
-                f"⏰ <b>Напоминание {current_time}</b>\n\n"
+                f"⏰ *Напоминание {current_time}*\n\n"
                 f"Время создать пост для канала!\n\n"
                 f"Используйте /new_post для создания нового поста."
             )
@@ -155,7 +155,7 @@ class ReminderService:
             return
         
         try:
-            await self.bot.send_message(user_id, f"⏰ <b>Напоминание</b>\n\n{message}")
+            await self.bot.send_message(user_id, f"⏰ *Напоминание*\n\n{message}")
             logger.info("Custom reminder sent to user %s", user_id)
         except Exception as e:
             logger.error("Failed to send custom reminder to user %s: %s", user_id, e)

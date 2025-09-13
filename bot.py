@@ -6,12 +6,12 @@ import sys
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
+# ParseMode больше не нужен глобально
 
 from config import config
 from database import db
 from utils.logging import setup_logging, get_logger
-from utils.states import PostCreationStates, AdminStates, DigestStates
+# States импортируются автоматически при использовании
 
 # Настройка логирования
 setup_logging(log_level=config.LOG_LEVEL)
@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 # Инициализация бота и диспетчера
 bot = Bot(
     token=config.BOT_TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    default=DefaultBotProperties()  # Убираем глобальный parse_mode
 )
 
 storage = MemoryStorage()
@@ -79,6 +79,10 @@ async def on_startup():
         from services.post_scheduler import post_scheduler
         post_scheduler.set_bot(bot)
         await post_scheduler.start_scheduler()
+        
+        # Инициализация PostPublisher
+        from services.publisher import init_publisher
+        init_publisher(bot)
         
         logger.info("Bot startup completed")
         

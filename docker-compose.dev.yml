@@ -17,6 +17,8 @@ services:
       - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - TIMEZONE=${TIMEZONE:-Europe/Moscow}
+      - MAX_POST_LENGTH=${MAX_POST_LENGTH:-4096}
+      - MIN_TAGS_REQUIRED=${MIN_TAGS_REQUIRED:-1}
     volumes:
       # Hot-reload: монтируем код в контейнер
       - .:/app

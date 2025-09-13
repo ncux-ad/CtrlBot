@@ -42,8 +42,8 @@ async def cmd_ai(message: Message):
         ])
         
         await message.answer(
-            f"🤖 <b>AI помощник CtrlBot</b>\n\n"
-            f"<b>Статус:</b> {status_text}\n\n"
+            f"🤖 *AI помощник CtrlBot*\n\n"
+            f"*Статус:* {status_text}\n\n"
             f"Выберите функцию:",
             reply_markup=keyboard
         )
@@ -51,7 +51,7 @@ async def cmd_ai(message: Message):
     except Exception as e:
         logger.error("Failed to show AI menu: %s", e)
         await message.answer(
-            "❌ <b>Ошибка загрузки AI функций</b>\n\n"
+            "❌ *Ошибка загрузки AI функций*\n\n"
             "Попробуйте позже или обратитесь к администратору.",
             reply_markup=get_main_menu_keyboard()
         )
@@ -60,7 +60,7 @@ async def cmd_ai(message: Message):
 async def callback_ai_suggest_tags(callback: CallbackQuery):
     """Подсказки тегов"""
     await callback.message.edit_text(
-        "🏷️ <b>Подсказки тегов</b>\n\n"
+        "🏷️ *Подсказки тегов*\n\n"
         "Отправьте текст поста, и я предложу релевантные теги.\n\n"
         "Просто напишите текст поста в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -73,7 +73,7 @@ async def callback_ai_suggest_tags(callback: CallbackQuery):
 async def callback_ai_shorten_text(callback: CallbackQuery):
     """Сокращение текста"""
     await callback.message.edit_text(
-        "✂️ <b>Сокращение текста</b>\n\n"
+        "✂️ *Сокращение текста*\n\n"
         "Отправьте текст, который нужно сократить.\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -95,7 +95,7 @@ async def callback_ai_change_style(callback: CallbackQuery):
     ])
     
     await callback.message.edit_text(
-        "🎨 <b>Изменение стиля текста</b>\n\n"
+        "🎨 *Изменение стиля текста*\n\n"
         "Выберите стиль для вашего текста:",
         reply_markup=keyboard
     )
@@ -105,7 +105,7 @@ async def callback_ai_change_style(callback: CallbackQuery):
 async def callback_ai_improve_text(callback: CallbackQuery):
     """Улучшение текста"""
     await callback.message.edit_text(
-        "📝 <b>Улучшение текста</b>\n\n"
+        "📝 *Улучшение текста*\n\n"
         "Отправьте текст для улучшения (исправление ошибок, улучшение стиля).\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -118,7 +118,7 @@ async def callback_ai_improve_text(callback: CallbackQuery):
 async def callback_ai_annotation(callback: CallbackQuery):
     """Создание аннотации"""
     await callback.message.edit_text(
-        "📄 <b>Создание аннотации</b>\n\n"
+        "📄 *Создание аннотации*\n\n"
         "Отправьте текст поста, и я создам краткую аннотацию.\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -134,15 +134,15 @@ async def callback_ai_settings(callback: CallbackQuery):
         status = await ai_service.check_api_status()
         
         await callback.message.edit_text(
-            f"🔧 <b>Настройки AI</b>\n\n"
-            f"<b>Статус API:</b> {status['message']}\n\n"
-            f"<b>Доступные функции:</b>\n"
+            f"🔧 *Настройки AI*\n\n"
+            f"*Статус API:* {status['message']}\n\n"
+            f"*Доступные функции:*\n"
             f"• Подсказки тегов\n"
             f"• Сокращение текста\n"
             f"• Изменение стиля\n"
             f"• Улучшение текста\n"
             f"• Создание аннотаций\n\n"
-            f"<b>Настройка:</b>\n"
+            f"*Настройка:*\n"
             f"• YANDEX_API_KEY: {'✅ Настроен' if ai_service.api_key else '❌ Не настроен'}\n"
             f"• YANDEX_FOLDER_ID: {'✅ Настроен' if ai_service.folder_id else '❌ Не настроен'}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -168,7 +168,7 @@ async def callback_style_selected(callback: CallbackQuery):
     }
     
     await callback.message.edit_text(
-        f"🎨 <b>Изменение стиля на {style_names.get(style, style)}</b>\n\n"
+        f"🎨 *Изменение стиля на {style_names.get(style, style)}*\n\n"
         f"Отправьте текст, который нужно переписать в {style_names.get(style, style)} стиле.\n\n"
         f"Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -213,7 +213,7 @@ async def process_tag_suggestion(message: Message, text: str):
         if tags:
             tags_text = ", ".join([f"#{tag}" for tag in tags])
             await message.answer(
-                f"🏷️ <b>Предлагаемые теги:</b>\n\n{tags_text}\n\n"
+                f"🏷️ *Предлагаемые теги:*\n\n{tags_text}\n\n"
                 f"Используйте эти теги для вашего поста!"
             )
         else:
@@ -231,9 +231,9 @@ async def process_text_shortening(message: Message, text: str):
         shortened = await ai_service.shorten_text(text, max_length=200)
         
         await message.answer(
-            f"✂️ <b>Сокращенный текст:</b>\n\n{shortened}\n\n"
-            f"<b>Исходная длина:</b> {len(text)} символов\n"
-            f"<b>Новая длина:</b> {len(shortened)} символов"
+            f"✂️ *Сокращенный текст:*\n\n{shortened}\n\n"
+            f"*Исходная длина:* {len(text)} символов\n"
+            f"*Новая длина:* {len(shortened)} символов"
         )
         
     except Exception as e:
@@ -248,8 +248,8 @@ async def process_text_improvement(message: Message, text: str):
         improved = await ai_service.improve_text(text)
         
         await message.answer(
-            f"📝 <b>Улучшенный текст:</b>\n\n{improved}\n\n"
-            f"<b>Исходный текст:</b>\n{text}"
+            f"📝 *Улучшенный текст:*\n\n{improved}\n\n"
+            f"*Исходный текст:*\n{text}"
         )
         
     except Exception as e:
@@ -260,7 +260,7 @@ async def process_text_improvement(message: Message, text: str):
 async def callback_back_to_admin(callback: CallbackQuery):
     """Возврат в админ-панель"""
     await callback.message.edit_text(
-        "👑 <b>Админ панель CtrlBot</b>\n\n"
+        "👑 *Админ панель CtrlBot*\n\n"
         "Выберите действие:",
         reply_markup=get_main_menu_keyboard()
     )

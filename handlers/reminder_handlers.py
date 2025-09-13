@@ -38,12 +38,12 @@ async def cmd_reminders(message: Message):
         
         reminders_text = ""
         if user_reminders:
-            reminders_text = "\n\n<b>Ваши напоминания:</b>\n"
+            reminders_text = "\n\n*Ваши напоминания:*\n"
             for reminder in user_reminders[:5]:  # Показываем только первые 5
                 time_str = reminder['scheduled_time'].strftime("%d.%m.%Y %H:%M")
                 reminders_text += f"• {time_str}: {reminder['message'][:50]}...\n"
         else:
-            reminders_text = "\n\n<b>У вас нет активных напоминаний</b>"
+            reminders_text = "\n\n*У вас нет активных напоминаний*"
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📋 Мои напоминания", callback_data="my_reminders")],
@@ -53,9 +53,9 @@ async def cmd_reminders(message: Message):
         ])
         
         await message.answer(
-            f"⏰ <b>Управление напоминаниями</b>\n\n"
-            f"<b>Статус планировщика:</b> {status_text}\n"
-            f"<b>{jobs_text}</b>"
+            f"⏰ *Управление напоминаниями*\n\n"
+            f"*Статус планировщика:* {status_text}\n"
+            f"*{jobs_text}*"
             f"{reminders_text}",
             reply_markup=keyboard
         )
@@ -63,7 +63,7 @@ async def cmd_reminders(message: Message):
     except Exception as e:
         logger.error("Failed to show reminders menu: %s", e)
         await message.answer(
-            "❌ <b>Ошибка загрузки напоминаний</b>\n\n"
+            "❌ *Ошибка загрузки напоминаний*\n\n"
             "Попробуйте позже или обратитесь к администратору.",
             reply_markup=get_main_menu_keyboard()
         )
@@ -76,7 +76,7 @@ async def callback_my_reminders(callback: CallbackQuery):
         
         if not reminders:
             await callback.message.edit_text(
-                "📋 <b>Мои напоминания</b>\n\n"
+                "📋 *Мои напоминания*\n\n"
                 "У вас нет активных напоминаний.\n\n"
                 "Создайте новое напоминание, используя кнопку ниже.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -85,10 +85,10 @@ async def callback_my_reminders(callback: CallbackQuery):
                 ])
             )
         else:
-            reminders_text = "📋 <b>Мои напоминания</b>\n\n"
+            reminders_text = "📋 *Мои напоминания*\n\n"
             for i, reminder in enumerate(reminders, 1):
                 time_str = reminder['scheduled_time'].strftime("%d.%m.%Y %H:%M")
-                reminders_text += f"{i}. <b>{time_str}</b>\n"
+                reminders_text += f"{i}. *{time_str}*\n"
                 reminders_text += f"   {reminder['message']}\n\n"
             
             # Создаем клавиатуру с кнопками удаления
@@ -118,7 +118,7 @@ async def callback_my_reminders(callback: CallbackQuery):
 async def callback_create_reminder(callback: CallbackQuery):
     """Создание напоминания"""
     await callback.message.edit_text(
-        "➕ <b>Создание напоминания</b>\n\n"
+        "➕ *Создание напоминания*\n\n"
         "Функция находится в разработке.\n"
         "Скоро здесь будет создание напоминаний.\n\n"
         "Планируемые функции:\n"
@@ -139,10 +139,10 @@ async def callback_reminder_settings(callback: CallbackQuery):
         status = await reminder_service.get_scheduler_status()
         
         await callback.message.edit_text(
-            "⚙️ <b>Настройки напоминаний</b>\n\n"
-            f"<b>Статус планировщика:</b> {'🟢 Работает' if status['running'] else '🔴 Остановлен'}\n"
-            f"<b>Задач в очереди:</b> {status['jobs_count']}\n\n"
-            "<b>Стандартные напоминания:</b>\n"
+            "⚙️ *Настройки напоминаний*\n\n"
+            f"*Статус планировщика:* {'🟢 Работает' if status['running'] else '🔴 Остановлен'}\n"
+            f"*Задач в очереди:* {status['jobs_count']}\n\n"
+            "*Стандартные напоминания:*\n"
             "• 12:00 - Ежедневное напоминание\n"
             "• 21:00 - Ежедневное напоминание\n\n"
             "Эти напоминания отправляются всем администраторам.",
@@ -179,7 +179,7 @@ async def callback_delete_reminder(callback: CallbackQuery):
 async def callback_back_to_admin(callback: CallbackQuery):
     """Возврат в админ-панель"""
     await callback.message.edit_text(
-        "👑 <b>Админ панель CtrlBot</b>\n\n"
+        "👑 *Админ панель CtrlBot*\n\n"
         "Выберите действие:",
         reply_markup=get_main_menu_keyboard()
     )
@@ -189,7 +189,7 @@ async def callback_back_to_admin(callback: CallbackQuery):
 async def cmd_ping(message: Message):
     """Проверка работоспособности бота"""
     await message.answer(
-        "🏓 <b>Pong!</b>\n\n"
+        "🏓 *Pong!*\n\n"
         "Бот работает нормально.\n"
         f"Время ответа: < 1 секунды"
     )

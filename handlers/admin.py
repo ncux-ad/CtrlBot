@@ -41,7 +41,7 @@ async def cmd_start(message: Message):
     logger.info("Admin access granted for user %s", message.from_user.id)
     
     await message.answer(
-        "👑 <b>Админ панель CtrlBot</b>\n\n"
+        "👑 *Админ панель CtrlBot*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -62,7 +62,7 @@ async def cmd_start(message: Message):
 async def cmd_admin(message: Message):
     """Главная админ панель"""
     await message.answer(
-        "👑 <b>Админ панель CtrlBot</b>\n\n"
+        "👑 *Админ панель CtrlBot*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_admin")]
@@ -79,7 +79,7 @@ async def cmd_ping(message: Message):
 async def btn_new_post(message: Message, state: FSMContext):
     """Обработчик кнопки 'Новый пост' - перенаправляем на inline меню"""
     await message.answer(
-        "📝 <b>Создание нового поста</b>\n\n"
+        "📝 **Создание нового поста**\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -91,7 +91,7 @@ async def btn_new_post(message: Message, state: FSMContext):
 async def btn_ai_helper(message: Message):
     """Обработчик кнопки 'AI помощник' - перенаправляем на inline меню"""
     await message.answer(
-        "🤖 <b>AI помощник</b>\n\n"
+        "🤖 *AI помощник*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🤖 AI функции", callback_data="ai_functions")],
@@ -103,7 +103,7 @@ async def btn_ai_helper(message: Message):
 async def btn_tags(message: Message):
     """Обработчик кнопки 'Теги' - перенаправляем на inline меню"""
     await message.answer(
-        "🏷️ <b>Управление тегами</b>\n\n"
+        "🏷️ *Управление тегами*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🏷️ Управление тегами", callback_data="manage_tags")],
@@ -115,7 +115,7 @@ async def btn_tags(message: Message):
 async def btn_settings(message: Message):
     """Обработчик кнопки 'Настройки' - перенаправляем на inline меню"""
     await message.answer(
-        "⚙️ <b>Настройки</b>\n\n"
+        "⚙️ *Настройки*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📢 Настройки канала", callback_data="channel_settings")],
@@ -127,7 +127,7 @@ async def btn_settings(message: Message):
 async def btn_my_posts(message: Message):
     """Обработчик кнопки 'Мои посты' - перенаправляем на inline меню"""
     await message.answer(
-        "📋 <b>Мои посты</b>\n\n"
+        "📋 *Мои посты*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📋 Просмотр постов", callback_data="view_posts")],
@@ -139,7 +139,7 @@ async def btn_my_posts(message: Message):
 async def btn_reminders(message: Message):
     """Обработчик кнопки 'Напоминания' - перенаправляем на inline меню"""
     await message.answer(
-        "⏰ <b>Напоминания</b>\n\n"
+        "⏰ *Напоминания*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="⏰ Управление напоминаниями", callback_data="manage_reminders")],
@@ -151,7 +151,7 @@ async def btn_reminders(message: Message):
 async def btn_series(message: Message):
     """Обработчик кнопки 'Серии' - перенаправляем на inline меню"""
     await message.answer(
-        "📊 <b>Серии</b>\n\n"
+        "📊 *Серии*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📚 Управление сериями", callback_data="manage_series")],
@@ -163,7 +163,7 @@ async def btn_series(message: Message):
 async def btn_statistics(message: Message):
     """Обработчик кнопки 'Статистика' - перенаправляем на inline меню"""
     await message.answer(
-        "📈 <b>Статистика</b>\n\n"
+        "📈 *Статистика*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📊 Экспорт данных", callback_data="export_data")],
@@ -175,28 +175,28 @@ async def btn_statistics(message: Message):
 async def cmd_config(message: Message):
     """Показ конфигурации"""
     config_info = f"""
-⚙️ <b>Конфигурация CtrlBot</b>
+⚙️ *Конфигурация CtrlBot*
 
-<b>Основные настройки:</b>
+*Основные настройки:*
 • Логирование: {config.LOG_LEVEL}
 • Макс. длина поста: {config.MAX_POST_LENGTH}
 • Мин. тегов: {config.MIN_TAGS_REQUIRED}
 • Часовой пояс: {config.TIMEZONE}
 
-<b>База данных:</b>
+*База данных:*
 • Хост: {config.DB_HOST}:{config.DB_PORT}
 • База: {config.DB_NAME}
 • Пользователь: {config.DB_USER}
 
-<b>AI интеграция:</b>
+*AI интеграция:*
 • YandexGPT: {'✅ Настроено' if config.YANDEX_API_KEY else '❌ Не настроено'}
 • Папка: {config.YANDEX_FOLDER_ID or 'Не указана'}
 
-<b>Каналы:</b>
+*Каналы:*
 • Настроено каналов: {len(config.CHANNEL_IDS) if hasattr(config, 'CHANNEL_IDS') else 0}
 • ID каналов: {config.CHANNEL_IDS if hasattr(config, 'CHANNEL_IDS') else 'Не настроено'}
 
-<b>Администраторы:</b>
+*Администраторы:*
 • Количество: {len(config.ADMIN_IDS)}
 • Ваш ID: {message.from_user.id if message.from_user else 'Неизвестно'}
     """
@@ -230,11 +230,11 @@ async def handle_forwarded_message(message: Message):
                         await save_channel_id_to_env(channel_id)
                         
                         await message.answer(
-                            f"✅ <b>Канал успешно настроен!</b>\n\n"
-                            f"📢 <b>Канал:</b> {channel_title}\n"
-                            f"🆔 <b>ID:</b> <code>{channel_id}</code>\n"
-                            f"🤖 <b>Права бота:</b> ✅ Администратор\n"
-                            f"📝 <b>Публикация:</b> ✅ Разрешена\n\n"
+                            f"✅ *Канал успешно настроен!*\n\n"
+                            f"📢 *Канал:* {channel_title}\n"
+                            f"🆔 *ID:* `{channel_id}`\n"
+                            f"🤖 *Права бота:* ✅ Администратор\n"
+                            f"📝 *Публикация:* ✅ Разрешена\n\n"
                             f"Теперь бот может публиковать посты в этот канал!",
                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -242,9 +242,9 @@ async def handle_forwarded_message(message: Message):
                         )
                     else:
                         await message.answer(
-                            f"ℹ️ <b>Канал уже настроен</b>\n\n"
-                            f"📢 <b>Канал:</b> {channel_title}\n"
-                            f"🆔 <b>ID:</b> <code>{channel_id}</code>\n\n"
+                            f"ℹ️ *Канал уже настроен*\n\n"
+                            f"📢 *Канал:* {channel_title}\n"
+                            f"🆔 *ID:* `{channel_id}`\n\n"
                             f"Канал уже добавлен в список для публикации.",
                             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -252,9 +252,9 @@ async def handle_forwarded_message(message: Message):
                         )
                 else:
                     await message.answer(
-                        f"❌ <b>Недостаточно прав</b>\n\n"
-                        f"📢 <b>Канал:</b> {channel_title}\n"
-                        f"🆔 <b>ID:</b> <code>{channel_id}</code>\n\n"
+                        f"❌ *Недостаточно прав*\n\n"
+                        f"📢 *Канал:* {channel_title}\n"
+                        f"🆔 *ID:* `{channel_id}`\n\n"
                         f"Бот добавлен как администратор, но не может публиковать сообщения.\n"
                         f"Проверьте права бота в настройках канала.",
                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -263,9 +263,9 @@ async def handle_forwarded_message(message: Message):
                     )
             else:
                 await message.answer(
-                    f"❌ <b>Бот не является администратором</b>\n\n"
-                    f"📢 <b>Канал:</b> {channel_title}\n"
-                    f"🆔 <b>ID:</b> <code>{channel_id}</code>\n\n"
+                    f"❌ *Бот не является администратором*\n\n"
+                    f"📢 *Канал:* {channel_title}\n"
+                    f"🆔 *ID:* `{channel_id}`\n\n"
                     f"Добавьте бота в канал как администратора с правами на публикацию.",
                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                         [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -275,7 +275,7 @@ async def handle_forwarded_message(message: Message):
         except Exception as e:
             logger.error("Error checking channel permissions: %s", e)
             await message.answer(
-                f"❌ <b>Ошибка проверки канала</b>\n\n"
+                f"❌ *Ошибка проверки канала*\n\n"
                 f"Не удалось проверить права бота в канале.\n"
                 f"Убедитесь, что бот добавлен как администратор.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -320,7 +320,7 @@ async def callback_channel_settings(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "📢 <b>Настройки канала</b>\n\n"
+                "📢 *Настройки канала*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будут настройки канала.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -337,7 +337,7 @@ async def callback_manage_tags(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "🏷️ <b>Управление тегами</b>\n\n"
+                "🏷️ *Управление тегами*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будет управление тегами.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -354,7 +354,7 @@ async def callback_manage_series(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "📚 <b>Управление сериями</b>\n\n"
+                "📚 *Управление сериями*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будет управление сериями.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -371,7 +371,7 @@ async def callback_manage_reminders(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "⏰ <b>Управление напоминаниями</b>\n\n"
+                "⏰ *Управление напоминаниями*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будет управление напоминаниями.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -388,7 +388,7 @@ async def callback_export_data(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "📊 <b>Экспорт данных</b>\n\n"
+                "📊 *Экспорт данных*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будет экспорт данных.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -406,7 +406,7 @@ async def callback_back_to_admin(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "👑 <b>Админ панель CtrlBot</b>\n\n"
+                "👑 *Админ панель CtrlBot*\n\n"
                 "Выберите действие:",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -441,16 +441,16 @@ async def callback_create_post(callback: CallbackQuery, state: FSMContext):
     if not channels:
         # Нет каналов - показываем инструкцию
         await callback.message.edit_text(
-            "🔗 <b>Сначала привяжите канал!</b>\n\n"
+            "🔗 *Сначала привяжите канал!*\n\n"
             "Для создания постов нужно привязать канал:\n\n"
-            "1️⃣ <b>Добавьте бота в канал как администратора</b>\n"
+            "1️⃣ *Добавьте бота в канал как администратора*\n"
             "   • Права: отправка сообщений\n"
             "   • Редактирование сообщений\n\n"
-            "2️⃣ <b>Перешлите любое сообщение из канала боту</b>\n"
+            "2️⃣ *Перешлите любое сообщение из канала боту*\n"
             "   • Я автоматически определю ID канала\n"
             "   • Сохраню настройки\n\n"
-            "3️⃣ <b>Готово!</b> Можете создавать посты\n\n"
-            "💡 <i>Перешлите сообщение из канала прямо сейчас</i>",
+            "3️⃣ *Готово!* Можете создавать посты\n\n"
+            "💡 _Перешлите сообщение из канала прямо сейчас_",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🔄 Проверить снова", callback_data="create_post")],
                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -464,7 +464,7 @@ async def callback_create_post(callback: CallbackQuery, state: FSMContext):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "📝 <b>Создание нового поста</b>\n\n"
+                "📝 **Создание нового поста**\n\n"
                 "Отправьте текст поста в формате Markdown.\n"
                 "Можно использовать *жирный*, _курсив_, `код` и другие элементы.",
                 reply_markup=get_post_actions_keyboard()
@@ -479,7 +479,7 @@ async def callback_ai_functions(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "🤖 <b>AI помощник CtrlBot</b>\n\n"
+                "🤖 *AI помощник CtrlBot*\n\n"
                 "Функция находится в разработке.\n"
                 "Скоро здесь будет AI помощник с YandexGPT.\n\n"
                 "Планируемые функции:\n"
@@ -511,16 +511,16 @@ async def callback_view_posts(callback: CallbackQuery):
         
         if not channels:
             await callback.message.edit_text(
-                "🔗 <b>Сначала привяжите канал!</b>\n\n"
+                "🔗 *Сначала привяжите канал!*\n\n"
                 "Для просмотра постов нужно привязать канал:\n\n"
-                "1️⃣ <b>Добавьте бота в канал как администратора</b>\n"
+                "1️⃣ *Добавьте бота в канал как администратора*\n"
                 "   • Права: отправка сообщений\n"
                 "   • Редактирование сообщений\n\n"
-                "2️⃣ <b>Перешлите любое сообщение из канала боту</b>\n"
+                "2️⃣ *Перешлите любое сообщение из канала боту*\n"
                 "   • Я автоматически определю ID канала\n"
                 "   • Сохраню настройки\n\n"
-                "3️⃣ <b>Готово!</b> Можете создавать и просматривать посты\n\n"
-                "💡 <i>Перешлите сообщение из канала прямо сейчас</i>",
+                "3️⃣ *Готово!* Можете создавать и просматривать посты\n\n"
+                "💡 _Перешлите сообщение из канала прямо сейчас_",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔄 Проверить снова", callback_data="view_posts")],
                     [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -534,7 +534,7 @@ async def callback_view_posts(callback: CallbackQuery):
         
         if not posts:
             await callback.message.edit_text(
-                "📋 <b>Мои посты</b>\n\n"
+                "📋 *Мои посты*\n\n"
                 "У вас пока нет постов.\n"
                 "Создайте первый пост командой /new_post",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -546,7 +546,7 @@ async def callback_view_posts(callback: CallbackQuery):
             return
         
         # Формируем список постов
-        text = "📋 <b>Мои посты</b>\n\n"
+        text = "📋 *Мои посты*\n\n"
         
         for i, post in enumerate(posts, 1):
             status_emoji = {
@@ -556,7 +556,7 @@ async def callback_view_posts(callback: CallbackQuery):
                 'deleted': '❌'
             }.get(post['status'], '❓')
             
-            text += f"{i}. {status_emoji} <b>#{post['id']}</b>\n"
+            text += f"{i}. {status_emoji} *#{post['id']}*\n"
             text += f"   📝 {post['body_md'][:50]}{'...' if len(post['body_md']) > 50 else ''}\n"
             
             if post['series_title']:
@@ -587,7 +587,7 @@ async def callback_view_posts(callback: CallbackQuery):
     except Exception as e:
         logger.error(f"Error in callback_view_posts: {e}")
         await callback.message.edit_text(
-            f"❌ <b>Ошибка загрузки постов</b>\n\n{str(e)}",
+            f"❌ *Ошибка загрузки постов*\n\n{str(e)}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
             ])
@@ -600,16 +600,16 @@ async def callback_get_channel_id(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "🔗 <b>Получение ID канала</b>\n\n"
+                "🔗 *Получение ID канала*\n\n"
                 "Для настройки публикации постов:\n\n"
-                "1️⃣ <b>Добавьте бота в канал как администратора</b>\n"
+                "1️⃣ *Добавьте бота в канал как администратора*\n"
                 "   • Права: отправка сообщений\n"
                 "   • Редактирование сообщений\n\n"
-                "2️⃣ <b>Перешлите любое сообщение из канала боту</b>\n"
+                "2️⃣ *Перешлите любое сообщение из канала боту*\n"
                 "   • Я автоматически определю ID канала\n"
                 "   • Сохраню настройки\n\n"
-                "3️⃣ <b>Готово!</b> Бот сможет публиковать посты\n\n"
-                "💡 <i>Перешлите сообщение из канала прямо сейчас</i>",
+                "3️⃣ *Готово!* Бот сможет публиковать посты\n\n"
+                "💡 _Перешлите сообщение из канала прямо сейчас_",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
                 ])
@@ -637,9 +637,9 @@ async def handle_channel_forward(message: Message):
         
         if existing_channel:
             await message.answer(
-                f"✅ <b>Канал уже настроен!</b>\n\n"
-                f"📢 <b>Канал:</b> {channel_title}\n"
-                f"🆔 <b>ID:</b> <code>{channel_id}</code>\n\n"
+                f"✅ *Канал уже настроен!*\n\n"
+                f"📢 *Канал:* {channel_title}\n"
+                f"🆔 *ID:* `{channel_id}`\n\n"
                 f"Бот уже может публиковать посты в этот канал.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -656,9 +656,9 @@ async def handle_channel_forward(message: Message):
             logger.info(f"✅ Канал {channel_id} ({channel_title}) добавлен в БД")
             
             await message.answer(
-                f"🎉 <b>Канал успешно добавлен!</b>\n\n"
-                f"📢 <b>Канал:</b> {channel_title}\n"
-                f"🆔 <b>ID:</b> <code>{channel_id}</code>\n\n"
+                f"🎉 *Канал успешно добавлен!*\n\n"
+                f"📢 *Канал:* {channel_title}\n"
+                f"🆔 *ID:* `{channel_id}`\n\n"
                 f"Теперь бот может публиковать посты в этот канал!\n\n"
                 f"💡 <i>Хотите создать первый пост?</i>",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -670,7 +670,7 @@ async def handle_channel_forward(message: Message):
     except Exception as e:
         logger.error(f"Error handling channel forward: {e}")
         await message.answer(
-            f"❌ <b>Ошибка добавления канала</b>\n\n{str(e)}",
+            f"❌ *Ошибка добавления канала*\n\n{str(e)}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
             ])
@@ -690,7 +690,7 @@ async def check_scheduled_posts(callback: CallbackQuery):
         
         if not status.get('bot_available'):
             await callback.message.edit_text(
-                "❌ <b>Планировщик недоступен</b>\n\n"
+                "❌ *Планировщик недоступен*\n\n"
                 "Бот не инициализирован для публикации постов.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -704,7 +704,7 @@ async def check_scheduled_posts(callback: CallbackQuery):
         
         if not scheduled_posts:
             await callback.message.edit_text(
-                "📭 <b>Нет отложенных постов</b>\n\n"
+                "📭 *Нет отложенных постов*\n\n"
                 "Все посты опубликованы или нет запланированных публикаций.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
@@ -714,12 +714,12 @@ async def check_scheduled_posts(callback: CallbackQuery):
             # Публикуем посты
             published_count = await post_service.publish_scheduled_posts(callback.bot)
             
-            result_text = f"📢 <b>Проверка отложенных постов</b>\n\n"
-            result_text += f"📋 <b>Найдено:</b> {len(scheduled_posts)} постов\n"
-            result_text += f"✅ <b>Опубликовано:</b> {published_count} постов\n\n"
+            result_text = f"📢 *Проверка отложенных постов*\n\n"
+            result_text += f"📋 *Найдено:* {len(scheduled_posts)} постов\n"
+            result_text += f"✅ *Опубликовано:* {published_count} постов\n\n"
             
             if published_count < len(scheduled_posts):
-                result_text += f"❌ <b>Ошибок:</b> {len(scheduled_posts) - published_count} постов\n"
+                result_text += f"❌ *Ошибок:* {len(scheduled_posts) - published_count} постов\n"
             
             await callback.message.edit_text(
                 result_text,
@@ -734,7 +734,7 @@ async def check_scheduled_posts(callback: CallbackQuery):
     except Exception as e:
         logger.error(f"Error in check_scheduled_posts: {e}")
         await callback.message.edit_text(
-            f"❌ <b>Ошибка проверки постов</b>\n\n{str(e)}",
+            f"❌ *Ошибка проверки постов*\n\n{str(e)}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
             ])

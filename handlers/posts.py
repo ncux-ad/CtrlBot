@@ -53,14 +53,14 @@ async def cmd_new_post(message: Message, state: FSMContext):
     """Команда создания нового поста"""
     await state.set_state(PostCreationStates.enter_text)
     await message.answer(
-        "📝 <b>Создание нового поста</b>\n\n"
+        "📝 **Создание нового поста**\n\n"
         "Отправьте текст поста - любой текст, который хотите опубликовать.\n\n"
-        "💡 <b>Поддерживается Markdown форматирование:</b>\n"
+        "💡 *Поддерживается Markdown форматирование:*\n"
         "• *жирный* → **жирный**\n"
         "• _курсив_ → __курсив__\n"
         "• `код` → `код`\n"
         "• [ссылка](url) → [ссылка](url)\n\n"
-        "✅ <b>Можно копировать из Obsidian, .md файлов и других редакторов!</b>",
+        "✅ *Можно копировать из Obsidian, .md файлов и других редакторов!*",
         reply_markup=get_post_actions_keyboard()
     )
 
@@ -82,7 +82,7 @@ async def callback_preview_post(callback: CallbackQuery, state: FSMContext):
     try:
         logger.info("🔄 Редактируем сообщение")
         await callback.message.edit_text(
-            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
+            f"👁️ *Предпросмотр поста:*\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
         logger.info("✅ Сообщение отредактировано успешно")
@@ -91,7 +91,7 @@ async def callback_preview_post(callback: CallbackQuery, state: FSMContext):
         # Если не удалось отредактировать, отправляем новое сообщение
         logger.info("📤 Отправляем новое сообщение")
         await callback.message.answer(
-            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
+            f"👁️ *Предпросмотр поста:*\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
         logger.info("✅ Новое сообщение отправлено")
@@ -105,7 +105,7 @@ async def callback_markdown_example(callback: CallbackQuery, state: FSMContext):
     post_text = data.get('post_text', '')
     
     example_text = """
-📝 <b>Пример Markdown форматирования:</b>
+📝 *Пример Markdown форматирования:*
 
 *Это жирный текст*
 _Это курсивный текст_
@@ -119,21 +119,21 @@ function hello() {
 
 [Ссылка на сайт](https://example.com)
 
-<b>Списки:</b>
+*Списки:*
 • Первый пункт
 • Второй пункт
 • Третий пункт
 
-<b>Нумерованный список:</b>
+*Нумерованный список:*
 1. Первый
 2. Второй  
 3. Третий
 
-<b>Цитата:</b>
+*Цитата:*
 > Это цитата
 > может быть многострочной
 
-<b>Эмодзи:</b> 😀 🚀 💡 📝 ✅ ❌
+*Эмодзи:* 😀 🚀 💡 📝 ✅ ❌
     """
     
     # Если есть сохраненный текст поста, показываем кнопку "Назад к посту"
@@ -156,7 +156,7 @@ async def callback_back_to_preview(callback: CallbackQuery, state: FSMContext):
     
     if not post_text:
         await callback.message.answer(
-            "❌ <b>Текст поста не найден</b>\n\n"
+            "❌ *Текст поста не найден*\n\n"
             "Создайте новый пост командой /new_post",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
@@ -165,7 +165,7 @@ async def callback_back_to_preview(callback: CallbackQuery, state: FSMContext):
     else:
         await state.set_state(PostCreationStates.preview)
         await callback.message.answer(
-            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
+            f"👁️ *Предпросмотр поста:*\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
     
@@ -176,7 +176,7 @@ async def callback_back_to_main_from_example(callback: CallbackQuery, state: FSM
     """Возврат в главное меню из примера Markdown"""
     await state.clear()
     await callback.message.answer(
-        "🏠 <b>Главное меню</b>\n\n"
+        "🏠 *Главное меню*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -206,7 +206,7 @@ async def callback_add_tags(callback: CallbackQuery, state: FSMContext):
         
         if not tags:
             await callback.message.edit_text(
-                "🏷️ <b>Теги не найдены</b>\n\n"
+                "🏷️ *Теги не найдены*\n\n"
                 "Сначала создайте теги в админ-панели.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔙 Назад к посту", callback_data="back_to_preview")]
@@ -215,7 +215,7 @@ async def callback_add_tags(callback: CallbackQuery, state: FSMContext):
         else:
             await state.set_state(PostCreationStates.add_tags)
             await callback.message.edit_text(
-                "🏷️ <b>Выберите теги для поста:</b>\n\n"
+                "🏷️ *Выберите теги для поста:*\n\n"
                 "Отметьте нужные теги и нажмите 'Готово'",
                 reply_markup=get_tags_keyboard(tags)
             )
@@ -284,7 +284,7 @@ async def callback_tags_done(callback: CallbackQuery, state: FSMContext):
         
         if not series:
             await callback.message.edit_text(
-                "📚 <b>Серии не найдены</b>\n\n"
+                "📚 *Серии не найдены*\n\n"
                 "Сначала создайте серии в админ-панели.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="🔙 Назад к посту", callback_data="back_to_preview")]
@@ -292,7 +292,7 @@ async def callback_tags_done(callback: CallbackQuery, state: FSMContext):
             )
         else:
             await callback.message.edit_text(
-                "📚 <b>Выберите серию для поста:</b>\n\n"
+                "📚 *Выберите серию для поста:*\n\n"
                 "Пост будет автоматически пронумерован в выбранной серии.",
                 reply_markup=get_series_keyboard(series)
             )
@@ -312,7 +312,7 @@ async def callback_select_series(callback: CallbackQuery, state: FSMContext):
     # Переходим к планированию
     await state.set_state(PostCreationStates.schedule)
     await callback.message.edit_text(
-        "📅 <b>Планирование публикации:</b>\n\n"
+        "📅 *Планирование публикации:*\n\n"
         "Выберите когда опубликовать пост:",
         reply_markup=get_schedule_keyboard()
     )
@@ -326,7 +326,7 @@ async def callback_skip_series(callback: CallbackQuery, state: FSMContext):
     # Переходим к планированию
     await state.set_state(PostCreationStates.schedule)
     await callback.message.edit_text(
-        "📅 <b>Планирование публикации:</b>\n\n"
+        "📅 *Планирование публикации:*\n\n"
         "Выберите когда опубликовать пост:",
         reply_markup=get_schedule_keyboard()
     )
@@ -342,11 +342,11 @@ async def callback_schedule_now(callback: CallbackQuery, state: FSMContext):
     post_text = data.get('post_text', '')
     
     await callback.message.edit_text(
-        f"✅ <b>Подтверждение публикации:</b>\n\n"
-        f"📝 <b>Текст:</b>\n{post_text}\n\n"
-        f"⏰ <b>Время:</b> Сейчас\n"
-        f"🏷️ <b>Теги:</b> {len(data.get('selected_tags', []))} выбрано\n"
-        f"📚 <b>Серия:</b> {'Да' if data.get('series_id') else 'Нет'}",
+        f"✅ *Подтверждение публикации:*\n\n"
+        f"📝 *Текст:*\n{post_text}\n\n"
+        f"⏰ *Время:* Сейчас\n"
+        f"🏷️ *Теги:* {len(data.get('selected_tags', []))} выбрано\n"
+        f"📚 *Серия:* {'Да' if data.get('series_id') else 'Нет'}",
         reply_markup=get_confirmation_keyboard("publish")
     )
     await callback.answer()
@@ -364,11 +364,11 @@ async def callback_schedule_hour(callback: CallbackQuery, state: FSMContext):
     post_text = data.get('post_text', '')
     
     await callback.message.edit_text(
-        f"✅ <b>Подтверждение публикации:</b>\n\n"
-        f"📝 <b>Текст:</b>\n{post_text}\n\n"
-        f"⏰ <b>Время:</b> {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
-        f"🏷️ <b>Теги:</b> {len(data.get('selected_tags', []))} выбрано\n"
-        f"📚 <b>Серия:</b> {'Да' if data.get('series_id') else 'Нет'}",
+        f"✅ *Подтверждение публикации:*\n\n"
+        f"📝 *Текст:*\n{post_text}\n\n"
+        f"⏰ *Время:* {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏷️ *Теги:* {len(data.get('selected_tags', []))} выбрано\n"
+        f"📚 *Серия:* {'Да' if data.get('series_id') else 'Нет'}",
         reply_markup=get_confirmation_keyboard("publish")
     )
     await callback.answer()
@@ -387,11 +387,11 @@ async def callback_schedule_tomorrow_morning(callback: CallbackQuery, state: FSM
     post_text = data.get('post_text', '')
     
     await callback.message.edit_text(
-        f"✅ <b>Подтверждение публикации:</b>\n\n"
-        f"📝 <b>Текст:</b>\n{post_text}\n\n"
-        f"⏰ <b>Время:</b> {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
-        f"🏷️ <b>Теги:</b> {len(data.get('selected_tags', []))} выбрано\n"
-        f"📚 <b>Серия:</b> {'Да' if data.get('series_id') else 'Нет'}",
+        f"✅ *Подтверждение публикации:*\n\n"
+        f"📝 *Текст:*\n{post_text}\n\n"
+        f"⏰ *Время:* {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏷️ *Теги:* {len(data.get('selected_tags', []))} выбрано\n"
+        f"📚 *Серия:* {'Да' if data.get('series_id') else 'Нет'}",
         reply_markup=get_confirmation_keyboard("publish")
     )
     await callback.answer()
@@ -410,11 +410,11 @@ async def callback_schedule_tomorrow_evening(callback: CallbackQuery, state: FSM
     post_text = data.get('post_text', '')
     
     await callback.message.edit_text(
-        f"✅ <b>Подтверждение публикации:</b>\n\n"
-        f"📝 <b>Текст:</b>\n{post_text}\n\n"
-        f"⏰ <b>Время:</b> {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
-        f"🏷️ <b>Теги:</b> {len(data.get('selected_tags', []))} выбрано\n"
-        f"📚 <b>Серия:</b> {'Да' if data.get('series_id') else 'Нет'}",
+        f"✅ *Подтверждение публикации:*\n\n"
+        f"📝 *Текст:*\n{post_text}\n\n"
+        f"⏰ *Время:* {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
+        f"🏷️ *Теги:* {len(data.get('selected_tags', []))} выбрано\n"
+        f"📚 *Серия:* {'Да' if data.get('series_id') else 'Нет'}",
         reply_markup=get_confirmation_keyboard("publish")
     )
     await callback.answer()
@@ -425,11 +425,11 @@ async def callback_schedule_custom(callback: CallbackQuery, state: FSMContext):
     await state.set_state(PostCreationStates.enter_time)
     
     await callback.message.edit_text(
-        "📅 <b>Укажите время публикации:</b>\n\n"
+        "📅 *Укажите время публикации:*\n\n"
         "Отправьте время в формате:\n"
-        "• <code>15:30</code> - сегодня в 15:30\n"
-        "• <code>завтра 15:30</code> - завтра в 15:30\n"
-        "• <code>25.12.2024 15:30</code> - конкретная дата\n\n"
+        "• `15:30` - сегодня в 15:30\n"
+        "• `завтра 15:30` - завтра в 15:30\n"
+        "• `25.12.2024 15:30` - конкретная дата\n\n"
         "Или нажмите 'Отменить' для возврата к выбору времени.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_schedule")]
@@ -446,7 +446,7 @@ async def callback_cancel_schedule(callback: CallbackQuery, state: FSMContext):
     post_text = data.get('post_text', '')
     
     await callback.message.edit_text(
-        f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
+        f"👁️ *Предпросмотр поста:*\n\n{post_text}",
         reply_markup=get_post_actions_keyboard()
     )
     await callback.answer()
@@ -494,7 +494,7 @@ async def process_time_input(message: Message, state: FSMContext):
         # Проверяем, что время в будущем
         if scheduled_at <= datetime.now():
             await message.answer(
-                "❌ <b>Время должно быть в будущем!</b>\n\n"
+                "❌ *Время должно быть в будущем!*\n\n"
                 "Попробуйте указать время заново:",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_schedule")]
@@ -510,22 +510,22 @@ async def process_time_input(message: Message, state: FSMContext):
         post_text = data.get('post_text', '')
         
         await message.answer(
-            f"✅ <b>Подтверждение публикации:</b>\n\n"
-            f"📝 <b>Текст:</b>\n{post_text}\n\n"
-            f"⏰ <b>Время:</b> {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
-            f"🏷️ <b>Теги:</b> {len(data.get('selected_tags', []))} выбрано\n"
-            f"📚 <b>Серия:</b> {'Да' if data.get('series_id') else 'Нет'}",
+            f"✅ *Подтверждение публикации:*\n\n"
+            f"📝 *Текст:*\n{post_text}\n\n"
+            f"⏰ *Время:* {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
+            f"🏷️ *Теги:* {len(data.get('selected_tags', []))} выбрано\n"
+            f"📚 *Серия:* {'Да' if data.get('series_id') else 'Нет'}",
             reply_markup=get_confirmation_keyboard("publish")
         )
         
     except Exception as e:
         logger.error(f"Ошибка парсинга времени '{time_text}': {e}")
         await message.answer(
-            "❌ <b>Неверный формат времени!</b>\n\n"
+            "❌ *Неверный формат времени!*\n\n"
             "Используйте один из форматов:\n"
-            "• <code>15:30</code> - сегодня в 15:30\n"
-            "• <code>завтра 15:30</code> - завтра в 15:30\n"
-            "• <code>25.12.2024 15:30</code> - конкретная дата\n\n"
+            "• `15:30` - сегодня в 15:30\n"
+            "• `завтра 15:30` - завтра в 15:30\n"
+            "• `25.12.2024 15:30` - конкретная дата\n\n"
             "Попробуйте еще раз:",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="❌ Отменить", callback_data="cancel_schedule")]
@@ -550,7 +550,7 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
         
         if not channel_ids:
             await callback.message.edit_text(
-                "❌ <b>Каналы не настроены</b>\n\n"
+                "❌ *Каналы не настроены*\n\n"
                 "Сначала настройте каналы для публикации."
             )
             await callback.answer()
@@ -568,20 +568,20 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
         )
         
         # Формируем сообщение о результате
-        result_text = f"✅ <b>Пост успешно создан!</b>\n\n"
-        result_text += f"📝 <b>ID поста:</b> {post_id}\n"
-        result_text += f"📝 <b>Текст:</b> {post_text[:100]}{'...' if len(post_text) > 100 else ''}\n"
+        result_text = f"✅ *Пост успешно создан!*\n\n"
+        result_text += f"📝 *ID поста:* {post_id}\n"
+        result_text += f"📝 *Текст:* {post_text[:100]}{'...' if len(post_text) > 100 else ''}\n"
         
         if series_id:
-            result_text += f"📚 <b>Серия:</b> {series_id}\n"
+            result_text += f"📚 *Серия:* {series_id}\n"
         
         if selected_tags:
-            result_text += f"🏷️ <b>Теги:</b> {len(selected_tags)} шт.\n"
+            result_text += f"🏷️ *Теги:* {len(selected_tags)} шт.\n"
         
         if scheduled_at:
-            result_text += f"📅 <b>Запланирован на:</b> {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
+            result_text += f"📅 *Запланирован на:* {scheduled_at.strftime('%d.%m.%Y %H:%M')}\n"
         else:
-            result_text += f"📅 <b>Статус:</b> Черновик\n"
+            result_text += f"📅 *Статус:* Черновик\n"
         
         await callback.message.edit_text(result_text)
         
@@ -591,7 +591,7 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logger.error("Failed to create post: %s", e)
         await callback.message.edit_text(
-            "❌ <b>Ошибка создания поста</b>\n\n"
+            "❌ *Ошибка создания поста*\n\n"
             "Попробуйте еще раз или обратитесь к администратору."
         )
     
@@ -602,7 +602,7 @@ async def callback_cancel_publish(callback: CallbackQuery, state: FSMContext):
     """Отмена публикации"""
     await state.clear()
     await callback.message.edit_text(
-        "❌ <b>Создание поста отменено</b>\n\n"
+        "❌ *Создание поста отменено*\n\n"
         "Используйте /new_post для создания нового поста."
     )
     await callback.answer()
@@ -625,7 +625,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
         if not channel_ids:
             logger.warning("❌ Каналы не настроены")
             await callback.message.edit_text(
-                "❌ <b>Каналы не настроены</b>\n\n"
+                "❌ *Каналы не настроены*\n\n"
                 "Сначала настройте каналы для публикации:\n"
                 "1. Перейдите в админ-панель\n"
                 "2. Нажмите '🔗 Получить ID канала'\n"
@@ -663,15 +663,15 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
         
         # Формируем сообщение о результате
         if published_channels:
-            result_text = f"✅ <b>Пост успешно опубликован!</b>\n\n"
-            result_text += f"📝 <b>Текст:</b>\n{post_text}\n\n"
-            result_text += f"📢 <b>Опубликовано в каналы:</b> {len(published_channels)}\n"
+            result_text = f"✅ *Пост успешно опубликован!*\n\n"
+            result_text += f"📝 *Текст:*\n{post_text}\n\n"
+            result_text += f"📢 *Опубликовано в каналы:* {len(published_channels)}\n"
             
             if failed_channels:
-                result_text += f"❌ <b>Ошибки:</b> {len(failed_channels)} каналов\n"
+                result_text += f"❌ *Ошибки:* {len(failed_channels)} каналов\n"
         else:
-            result_text = "❌ <b>Не удалось опубликовать пост</b>\n\n"
-            result_text += f"📝 <b>Текст:</b>\n{post_text}\n\n"
+            result_text = "❌ *Не удалось опубликовать пост*\n\n"
+            result_text += f"📝 *Текст:*\n{post_text}\n\n"
             result_text += "Проверьте права бота в каналах."
         
         await callback.message.edit_text(
@@ -690,7 +690,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         logger.error("Failed to publish post: %s", e)
         await callback.message.edit_text(
-            "❌ <b>Ошибка публикации поста</b>\n\n"
+            "❌ *Ошибка публикации поста*\n\n"
             "Попробуйте еще раз или обратитесь к администратору.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
@@ -705,7 +705,7 @@ async def callback_cancel_post(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     try:
         await callback.message.edit_text(
-            "❌ <b>Создание поста отменено</b>\n\n"
+            "❌ *Создание поста отменено*\n\n"
             "Используйте кнопки ниже для навигации:",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
@@ -724,7 +724,7 @@ async def cmd_my_posts(message: Message):
         
         if not posts:
             await message.answer(
-                "📋 <b>Мои посты</b>\n\n"
+                "📋 *Мои посты*\n\n"
                 "У вас пока нет постов.\n"
                 "Создайте первый пост командой /new_post",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -734,7 +734,7 @@ async def cmd_my_posts(message: Message):
             return
         
         # Формируем список постов
-        text = "📋 <b>Мои посты</b>\n\n"
+        text = "📋 *Мои посты*\n\n"
         
         for i, post in enumerate(posts, 1):
             status_emoji = {
@@ -744,7 +744,7 @@ async def cmd_my_posts(message: Message):
                 'deleted': '❌'
             }.get(post['status'], '❓')
             
-            text += f"{i}. {status_emoji} <b>#{post['id']}</b>\n"
+            text += f"{i}. {status_emoji} *#{post['id']}*\n"
             text += f"   📝 {post['body_md'][:50]}{'...' if len(post['body_md']) > 50 else ''}\n"
             
             if post['series_title']:
@@ -773,7 +773,7 @@ async def cmd_my_posts(message: Message):
     except Exception as e:
         logger.error(f"Ошибка при получении постов: {e}")
         await message.answer(
-            "❌ <b>Ошибка загрузки постов</b>\n\n"
+            "❌ *Ошибка загрузки постов*\n\n"
             "Попробуйте еще раз или обратитесь к администратору.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
@@ -784,25 +784,25 @@ async def cmd_my_posts(message: Message):
 async def cmd_help(message: Message):
     """Команда помощи"""
     help_text = """
-🤖 <b>CtrlBot - Помощь</b>
+🤖 *CtrlBot - Помощь*
 
-<b>Основные команды:</b>
+*Основные команды:*
 /new_post - Создать новый пост
 /my_posts - Мои посты
 /help - Эта справка
 
-<b>Для администраторов:</b>
+*Для администраторов:*
 /admin - Админ панель
 /config - Настройки
 
-<b>Markdown форматирование:</b>
+*Markdown форматирование:*
 *жирный* - жирный текст
 _курсив_ - курсивный текст
 `код` - моноширинный код
 ```блок кода``` - блок кода
 [ссылка](url) - ссылка
 
-<b>Поддержка:</b>
+*Поддержка:*
 Если у вас есть вопросы, обратитесь к администратору.
     """
     
@@ -827,7 +827,7 @@ async def process_any_post_message(message: Message, state: FSMContext):
         logger.info(f"📝 Получен caption: '{text}'")
     else:
         logger.warning("❌ Сообщение не содержит текста")
-        await message.answer("❌ <b>Не удалось получить текст</b>\n\nСообщение не содержит текста.")
+        await message.answer("❌ *Не удалось получить текст*\n\nСообщение не содержит текста.")
         return
     
     # Валидация текста
@@ -848,7 +848,7 @@ async def process_any_post_message(message: Message, state: FSMContext):
     # Показываем простой предпросмотр
     logger.info("👁️ Отправляем предпросмотр")
     await message.answer(
-        f"👁️ <b>Предпросмотр поста:</b>\n\n{text}",
+        f"👁️ *Предпросмотр поста:*\n\n{text}",
         reply_markup=get_post_actions_keyboard()
     )
     logger.info("✅ Предпросмотр отправлен успешно")
@@ -859,7 +859,7 @@ async def process_any_post_message(message: Message, state: FSMContext):
 async def handle_unknown(message: Message):
     """Обработка неизвестных сообщений"""
     await message.answer(
-        "❓ <b>Неизвестная команда</b>\n\n"
+        "❓ *Неизвестная команда*\n\n"
         "Используйте /help для просмотра доступных команд.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]

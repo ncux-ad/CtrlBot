@@ -30,6 +30,7 @@ create table if not exists posts (
   user_id bigint not null,
   title text,
   body_md text not null,
+  entities jsonb,  -- Telegram entities для сохранения форматирования
   status post_status default 'draft',
   scheduled_at timestamptz,
   published_at timestamptz,
