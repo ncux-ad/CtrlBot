@@ -13,16 +13,16 @@ async def test_commands():
     
     # Создаем тестового пользователя
     test_user = User(
-        id=ADMIN_ID_PLACEHOLDER,  # ID из вашего теста
+        id=config.ADMIN_IDS[0] if config.ADMIN_IDS else 123456789,  # Используем ID из конфига
         is_bot=False,
-        first_name="Андрей",
-        last_name="Данилин",
+        first_name="Test",
+        last_name="User",
         username="test_user"
     )
     
     # Создаем тестовый чат
     test_chat = Chat(
-        id=ADMIN_ID_PLACEHOLDER,
+        id=test_user.id,
         type="private"
     )
     
