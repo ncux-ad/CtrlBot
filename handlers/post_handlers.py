@@ -25,6 +25,7 @@ from utils.keyboards import (
     get_schedule_keyboard,
     get_confirmation_keyboard
 )
+from utils.pagination import get_pagination_manager
 from utils.timezone_utils import format_datetime
 from utils.states import PostCreationStates
 from utils.filters import IsConfigAdminFilter, PostTextFilter
@@ -615,14 +616,23 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "my_posts")
 async def callback_my_posts(callback: CallbackQuery):
-    """Просмотр постов пользователя"""
+    """Просмотр постов пользователя с пагинацией"""
+    await callback_my_posts_page(callback, page=1)
+
+@router.callback_query(F.data.startswith("posts_page_"))
+async def callback_my_posts_page(callback: CallbackQuery, page: int = None):
+    """Просмотр постов пользователя с пагинацией"""
     try:
-        logger.info(f"📋 Просмотр постов пользователя {callback.from_user.id}")
+        # Извлекаем номер страницы из callback_data
+        if page is None:
+            page = int(callback.data.split("_")[2])
         
-        # Получаем посты пользователя
-        posts = await post_service.get_user_posts(callback.from_user.id, limit=10)
+        logger.info(f"📋 Просмотр постов пользователя {callback.from_user.id}, страница {page}")
         
-        if not posts:
+        # Получаем все посты пользователя (без лимита)
+        all_posts = await post_service.get_user_posts(callback.from_user.id, limit=1000)
+        
+        if not all_posts:
             await callback.message.edit_text(
                 "📋 *Мои посты*\n\n"
                 "У вас пока нет постов.\n"
@@ -635,10 +645,14 @@ async def callback_my_posts(callback: CallbackQuery):
             await callback.answer()
             return
         
-        # Формируем список постов
-        text = "📋 *Мои посты*\n\n"
+        # Используем пагинацию
+        pagination = get_pagination_manager()
+        page_posts, page_info = pagination.get_page_items(all_posts, page)
         
-        for i, post in enumerate(posts, 1):
+        # Формируем список постов
+        text = f"📋 *Мои посты* (стр. {page_info['current_page']}/{page_info['total_pages']})\n\n"
+        
+        for i, post in enumerate(page_posts, page_info['start_index'] + 1):
             status_emoji = {
                 'draft': '📝',
                 'scheduled': '⏰',
@@ -662,21 +676,17 @@ async def callback_my_posts(callback: CallbackQuery):
             
             text += f"   📅 {format_datetime(post['created_at'])}\n\n"
         
-        # Добавляем кнопки
-        keyboard = []
-        if len(posts) >= 10:
-            keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
-        keyboard.append([InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")])
-        keyboard.append([InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")])
+        # Создаем клавиатуру с пагинацией
+        keyboard = pagination.create_posts_pagination_keyboard(page_info, page_posts, "posts")
         
         await callback.message.edit_text(
             text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
+            reply_markup=keyboard
         )
         await callback.answer()
         
     except Exception as e:
-        logger.error(f"Error in callback_my_posts: {e}")
+        logger.error(f"Error in callback_my_posts_page: {e}")
         await callback.message.edit_text(
             f"❌ *Ошибка загрузки постов*\n\n{str(e)}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -685,66 +695,17 @@ async def callback_my_posts(callback: CallbackQuery):
         )
         await callback.answer()
 
-@router.callback_query(F.data == "load_more_posts")
-async def callback_load_more_posts(callback: CallbackQuery):
-    """Загрузка дополнительных постов"""
-    try:
-        logger.info(f"📄 Загрузка дополнительных постов для пользователя {callback.from_user.id}")
-        
-        # Получаем offset из FSM или используем 10 по умолчанию
-        data = await callback.message.get_state()
-        offset = 10  # Пока простое решение
-        
-        # Получаем посты пользователя
-        posts = await post_service.get_user_posts(callback.from_user.id, limit=10, offset=offset)
-        
-        if not posts:
-            await callback.answer("📭 Больше постов нет", show_alert=True)
-            return
-        
-        # Формируем список постов
-        text = "📋 *Мои посты (продолжение)*\n\n"
-        
-        for i, post in enumerate(posts, offset + 1):
-            status_emoji = {
-                'draft': '📝',
-                'scheduled': '⏰',
-                'published': '✅',
-                'deleted': '❌',
-                'failed': '⚠️'
-            }.get(post['status'], '❓')
-            
-            text += f"{i}. {status_emoji} *#{post['id']}*\n"
-            text += f"   📝 {post['body_md'][:50]}{'...' if len(post['body_md']) > 50 else ''}\n"
-            
-            if post['series_title']:
-                text += f"   📚 {post['series_title']}\n"
-            
-            if post['tags_cache']:
-                tags = ', '.join(post['tags_cache'][:3])
-                text += f"   🏷️ {tags}\n"
-            
-            if post['scheduled_at']:
-                text += f"   ⏰ {format_datetime(post['scheduled_at'])}\n"
-            
-            text += f"   📅 {format_datetime(post['created_at'])}\n\n"
-        
-        # Добавляем кнопки
-        keyboard = []
-        if len(posts) >= 10:
-            keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
-        keyboard.append([InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")])
-        keyboard.append([InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")])
-        
-        await callback.message.edit_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
-        )
-        await callback.answer()
-        
-    except Exception as e:
-        logger.error(f"Error in callback_load_more_posts: {e}")
-        await callback.answer("❌ Ошибка загрузки постов", show_alert=True)
+@router.callback_query(F.data == "pagination_info")
+async def callback_pagination_info(callback: CallbackQuery):
+    """Информация о пагинации"""
+    await callback.answer(
+        "📄 *Пагинация*\n\n"
+        "⬅️ - предыдущая страница\n"
+        "➡️ - следующая страница\n"
+        "👁️ - просмотр поста\n"
+        "🗑️ - удаление поста",
+        show_alert=True
+    )
 
 @router.callback_query(F.data == "back_to_admin")
 async def callback_back_to_admin(callback: CallbackQuery, state: FSMContext):
@@ -927,12 +888,12 @@ async def callback_cancel_post(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Command("my_posts"), admin_filter)
 async def cmd_my_posts(message: Message):
-    """Команда просмотра постов"""
+    """Команда просмотра постов с пагинацией"""
     try:
-        # Получаем посты пользователя
-        posts = await post_service.get_user_posts(message.from_user.id, limit=10)
+        # Получаем все посты пользователя
+        all_posts = await post_service.get_user_posts(message.from_user.id, limit=1000)
         
-        if not posts:
+        if not all_posts:
             await message.answer(
                 "📋 *Мои посты*\n\n"
                 "У вас пока нет постов.\n"
@@ -943,10 +904,14 @@ async def cmd_my_posts(message: Message):
             )
             return
         
-        # Формируем список постов
-        text = "📋 *Мои посты*\n\n"
+        # Используем пагинацию
+        pagination = get_pagination_manager()
+        page_posts, page_info = pagination.get_page_items(all_posts, 1)
         
-        for i, post in enumerate(posts, 1):
+        # Формируем список постов
+        text = f"📋 *Мои посты* (стр. {page_info['current_page']}/{page_info['total_pages']})\n\n"
+        
+        for i, post in enumerate(page_posts, page_info['start_index'] + 1):
             status_emoji = {
                 'draft': '📝',
                 'scheduled': '⏰',
@@ -970,15 +935,12 @@ async def cmd_my_posts(message: Message):
             
             text += f"   📅 {format_datetime(post['created_at'])}\n\n"
         
-        # Добавляем кнопки
-        keyboard = []
-        if len(posts) >= 10:
-            keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
-        keyboard.append([InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")])
+        # Создаем клавиатуру с пагинацией
+        keyboard = pagination.create_posts_pagination_keyboard(page_info, page_posts, "posts")
         
         await message.answer(
             text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
+            reply_markup=keyboard
         )
         
     except Exception as e:
