@@ -19,8 +19,8 @@ logger = get_logger(__name__)
 
 # Инициализация бота и диспетчера
 bot = Bot(
-    token=config.BOT_TOKEN,
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    token=config.BOT_TOKEN
+    # Убираем глобальный parse_mode - будем работать с entities
 )
 
 storage = MemoryStorage()

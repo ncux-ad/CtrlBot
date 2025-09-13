@@ -35,70 +35,7 @@ router = Router()
 admin_filter = IsConfigAdminFilter()
 text_filter = PostTextFilter()
 
-def convert_markdown_to_telegram(text: str) -> str:
-    """Конвертирует стандартный Markdown в Telegram MarkdownV2"""
-    logger.info(f"🔄 convert_markdown_to_telegram: входной текст: '{text}'")
-    
-    # Исправляем незакрытые блоки кода
-    # Если есть ``` без закрытия, добавляем ```
-    triple_backticks_count = text.count('```')
-    if triple_backticks_count % 2 == 1:
-        text += '```'
-        logger.info("🔄 Исправлен незакрытый блок кода")
-    
-    # Сначала обрабатываем блоки кода - они не должны конвертироваться
-    code_blocks = []
-    code_pattern = r'```([^`]*?)```'
-    code_matches = re.findall(code_pattern, text, re.DOTALL)
-    for i, code_content in enumerate(code_matches):
-        placeholder = f"__CODE_BLOCK_{i}__"
-        code_blocks.append(code_content)
-        text = text.replace(f"```{code_content}```", placeholder)
-    
-    # Обрабатываем одиночные блоки кода
-    single_backticks = []
-    single_code_pattern = r'`([^`]+)`'
-    single_matches = re.findall(single_code_pattern, text)
-    for i, code_content in enumerate(single_matches):
-        placeholder = f"__SINGLE_CODE_{i}__"
-        single_backticks.append(code_content)
-        text = text.replace(f"`{code_content}`", placeholder)
-    
-    # Конвертируем одинарные маркеры в правильные для Telegram MarkdownV2
-    # *жирный* -> **жирный** (жирный)
-    before_bold = text
-    text = re.sub(r'(?<!\*)\*([^*]+)\*(?!\*)', r'**\1**', text)
-    if before_bold != text:
-        logger.info(f"🔄 Конвертация жирного: '{before_bold}' -> '{text}'")
-    
-    # _курсив_ -> *курсив* (курсив, НЕ подчеркивание!)
-    before_italic = text
-    text = re.sub(r'(?<![a-zA-Z0-9])_([^_]+)_(?![a-zA-Z0-9])', r'*\1*', text)
-    if before_italic != text:
-        logger.info(f"🔄 Конвертация курсива: '{before_italic}' -> '{text}'")
-    
-    # Экранируем специальные символы для MarkdownV2
-    # Символы, которые нужно экранировать: _ * [ ] ( ) ~ ` > # + - = | { } . !
-    before_escape = text
-    escape_chars = r'\_\*\[\]\(\)~`>#\+\-=|{}\.!'
-    for char in escape_chars:
-        if char not in ['*', '_', '[', ']', '(', ')', '`']:  # Не экранируем маркеры форматирования
-            text = text.replace(char, f'\\{char}')
-    
-    if before_escape != text:
-        logger.info(f"🔄 Экранирование: '{before_escape}' -> '{text}'")
-    
-    # Восстанавливаем блоки кода
-    for i, code_content in enumerate(code_blocks):
-        placeholder = f"__CODE_BLOCK_{i}__"
-        text = text.replace(placeholder, f"```{code_content}```")
-    
-    for i, code_content in enumerate(single_backticks):
-        placeholder = f"__SINGLE_CODE_{i}__"
-        text = text.replace(placeholder, f"`{code_content}`")
-    
-    logger.info(f"🔄 convert_markdown_to_telegram: результат: '{text}'")
-    return text
+# Убраны функции парсинга - возвращаемся к простому созданию поста
 
 def escape_markdown(text: str) -> str:
     """Экранирует специальные символы Telegram Markdown"""
@@ -142,23 +79,18 @@ async def callback_preview_post(callback: CallbackQuery, state: FSMContext):
     logger.info(f"📝 Текст для предпросмотра: '{post_text}'")
     
     try:
-        logger.info("🔄 Редактируем сообщение с parse_mode='MarkdownV2'")
-        # Экранируем HTML теги для MarkdownV2
-        preview_text = f"👁️ *Предпросмотр поста:*\n\n{post_text}"
+        logger.info("🔄 Редактируем сообщение")
         await callback.message.edit_text(
-            preview_text,
-            parse_mode="MarkdownV2",
+            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
         logger.info("✅ Сообщение отредактировано успешно")
     except Exception as e:
         logger.warning(f"❌ Не удалось отредактировать сообщение: {e}")
         # Если не удалось отредактировать, отправляем новое сообщение
-        logger.info("📤 Отправляем новое сообщение с parse_mode='MarkdownV2'")
-        preview_text = f"👁️ *Предпросмотр поста:*\n\n{post_text}"
+        logger.info("📤 Отправляем новое сообщение")
         await callback.message.answer(
-            preview_text,
-            parse_mode="MarkdownV2",
+            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
         logger.info("✅ Новое сообщение отправлено")
@@ -231,11 +163,8 @@ async def callback_back_to_preview(callback: CallbackQuery, state: FSMContext):
         )
     else:
         await state.set_state(PostCreationStates.preview)
-        # Экранируем HTML теги для MarkdownV2
-        preview_text = f"👁️ *Предпросмотр поста:*\n\n{post_text}"
         await callback.message.answer(
-            preview_text,
-            parse_mode="MarkdownV2",
+            f"👁️ <b>Предпросмотр поста:</b>\n\n{post_text}",
             reply_markup=get_post_actions_keyboard()
         )
     
@@ -457,13 +386,11 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
             try:
                 logger.info(f"📤 Публикуем в канал {channel_id}")
                 logger.info(f"📝 Текст: '{post_text}'")
-                logger.info(f"🔧 parse_mode: 'MarkdownV2'")
                 
-                # Отправляем пост в канал с MarkdownV2 форматированием
+                # Отправляем пост в канал как есть
                 sent_message = await callback.bot.send_message(
                     chat_id=channel_id,
-                    text=post_text,
-                    parse_mode="MarkdownV2"
+                    text=post_text
                 )
                 
                 published_channels.append(channel_id)
@@ -576,7 +503,7 @@ _курсив_ - курсивный текст
 
 @router.message(StateFilter(PostCreationStates.enter_text))
 async def process_any_post_message(message: Message, state: FSMContext):
-    """Простой обработчик для любых сообщений при создании поста"""
+    """Простой обработчик для создания поста - без парсинга"""
     logger.info("=== НАЧАЛО ОБРАБОТКИ СООБЩЕНИЯ ===")
     
     # Получаем текст из сообщения
@@ -600,37 +527,19 @@ async def process_any_post_message(message: Message, state: FSMContext):
         return
     logger.info("✅ Валидация прошла успешно")
     
-    # Конвертируем стандартный Markdown в Telegram Markdown
-    logger.info("🔄 Начинаем конвертацию Markdown")
-    logger.info(f"📥 Исходный текст: '{text}'")
-    converted_text = convert_markdown_to_telegram(text)
-    logger.info(f"📤 Конвертированный текст: '{converted_text}'")
-    
-    # Сохраняем конвертированный текст
+    # Сохраняем текст как есть
     logger.info("💾 Сохраняем текст в FSM state")
-    await state.update_data(post_text=converted_text)
+    await state.update_data(post_text=text)
     await state.set_state(PostCreationStates.preview)
     logger.info("✅ FSM state обновлен")
     
-    # Показываем предпросмотр с MarkdownV2 форматированием
-    logger.info("👁️ Отправляем предпросмотр с parse_mode='MarkdownV2'")
-    try:
-        # Экранируем HTML теги для MarkdownV2
-        preview_text = f"👁️ *Предпросмотр поста:*\n\n{converted_text}"
-        await message.answer(
-            preview_text,
-            parse_mode="MarkdownV2",
-            reply_markup=get_post_actions_keyboard()
-        )
-        logger.info("✅ Предпросмотр отправлен успешно")
-    except Exception as e:
-        logger.error(f"❌ Ошибка при отправке предпросмотра: {e}")
-        # Fallback без форматирования
-        await message.answer(
-            f"👁️ Предпросмотр поста:\n\n{converted_text}",
-            reply_markup=get_post_actions_keyboard()
-        )
-        logger.info("✅ Предпросмотр отправлен без форматирования")
+    # Показываем простой предпросмотр
+    logger.info("👁️ Отправляем предпросмотр")
+    await message.answer(
+        f"👁️ <b>Предпросмотр поста:</b>\n\n{text}",
+        reply_markup=get_post_actions_keyboard()
+    )
+    logger.info("✅ Предпросмотр отправлен успешно")
     
     logger.info("=== КОНЕЦ ОБРАБОТКИ СООБЩЕНИЯ ===")
 
