@@ -7,6 +7,7 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     """Главное меню бота"""
     keyboard = [
         [KeyboardButton(text="📝 Новый пост"), KeyboardButton(text="📋 Мои посты")],
+        [KeyboardButton(text="🤖 AI помощник"), KeyboardButton(text="⏰ Напоминания")],
         [KeyboardButton(text="🏷️ Теги"), KeyboardButton(text="📊 Серии")],
         [KeyboardButton(text="⚙️ Настройки"), KeyboardButton(text="📈 Статистика")]
     ]
@@ -16,6 +17,7 @@ def get_post_actions_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура для действий с постом"""
     keyboard = [
         [InlineKeyboardButton(text="👁️ Предпросмотр", callback_data="preview_post")],
+        [InlineKeyboardButton(text="📝 Пример Markdown", callback_data="markdown_example")],
         [InlineKeyboardButton(text="🏷️ Добавить теги", callback_data="add_tags")],
         [InlineKeyboardButton(text="📅 Запланировать", callback_data="schedule_post")],
         [InlineKeyboardButton(text="✅ Опубликовать", callback_data="publish_post")],

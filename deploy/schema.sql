@@ -18,7 +18,11 @@ create table if not exists series (
   unique(channel_id, code)
 );
 
-create type post_status as enum ('draft','scheduled','published','deleted');
+do $$ begin
+  create type post_status as enum ('draft','scheduled','published','deleted');
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists posts (
   id bigserial primary key,

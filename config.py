@@ -13,6 +13,7 @@ class Config:
     # Telegram Bot
     BOT_TOKEN: str = os.getenv('BOT_TOKEN', '')
     ADMIN_IDS: List[int] = [int(x) for x in os.getenv('ADMIN_IDS', '').split(',') if x.strip()]
+    CHANNEL_IDS: List[int] = [int(x) for x in os.getenv('CHANNEL_IDS', '').split(',') if x.strip()]
     
     # Database
     DB_HOST: str = os.getenv('DB_HOST', 'localhost')
@@ -27,8 +28,8 @@ class Config:
     
     # Logging
     LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
-    LOG_FILE: str = os.getenv('LOG_FILE', '/var/log/post_bot.log')
-    LOG_ERROR_FILE: str = os.getenv('LOG_ERROR_FILE', '/var/log/post_bot.err')
+    LOG_FILE: str = os.getenv('LOG_FILE', 'logs/bot.log')
+    LOG_ERROR_FILE: str = os.getenv('LOG_ERROR_FILE', 'logs/errors.log')
     
     # App settings
     TIMEZONE: str = os.getenv('TIMEZONE', 'Europe/Moscow')

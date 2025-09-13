@@ -3,7 +3,7 @@ version: '3.8'
 services:
   ctrlbot:
     build: .
-    container_name: ctrlbot
+    container_name: ctrlbot_dev
     restart: unless-stopped
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
@@ -18,23 +18,21 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - TIMEZONE=${TIMEZONE:-Europe/Moscow}
     volumes:
+      # Hot-reload: монтируем код в контейнер
+      - .:/app
       - ./logs:/app/logs
       - ./data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "healthcheck.py"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - ctrlbot-network
+    # Переопределяем команду для hot-reload
+    command: python hot_reload.py
 
   postgres:
     image: postgres:15-alpine
-    container_name: ctrlbot_postgres
+    container_name: ctrlbot_postgres_dev
     restart: unless-stopped
     environment:
       - POSTGRES_DB=${DB_NAME:-ctrlbot_db}
@@ -42,7 +40,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
       - ./deploy/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     ports:
       - "5432:5432"
@@ -54,25 +52,8 @@ services:
     networks:
       - ctrlbot-network
 
-  # Optional: pgAdmin for database management
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: ctrlbot_pgadmin
-    restart: unless-stopped
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@ctrlbot.local}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
-    ports:
-      - "8080:80"
-    depends_on:
-      - postgres
-    networks:
-      - ctrlbot-network
-    profiles:
-      - admin
-
 volumes:
-  postgres_data:
+  postgres_data_dev:
 
 networks:
   ctrlbot-network:

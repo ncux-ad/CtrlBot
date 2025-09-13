@@ -1,0 +1,35 @@
+[Unit]
+Description=CtrlBot - Telegram Bot for Channel Management
+Documentation=https://github.com/your-org/ctrlbot
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ctrlbot
+Group=ctrlbot
+WorkingDirectory=/opt/ctrlbot
+Environment=PATH=/opt/ctrlbot/venv/bin
+ExecStart=/opt/ctrlbot/venv/bin/python /opt/ctrlbot/bot.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ctrlbot
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ctrlbot/logs
+ReadWritePaths=/opt/ctrlbot/data
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

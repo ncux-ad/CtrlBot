@@ -1,0 +1,6 @@
+@echo off
+echo Останавливаем бота...
+taskkill /F /IM python.exe >nul 2>&1
+timeout /t 2 /nobreak >nul
+echo Запускаем бота...
+.\venv\Scripts\activate && python bot.py

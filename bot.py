@@ -14,11 +14,7 @@ from utils.logging import setup_logging, get_logger
 from utils.states import PostCreationStates, AdminStates, DigestStates
 
 # Настройка логирования
-setup_logging(
-    log_file_path=config.LOG_FILE,
-    error_file_path=config.LOG_ERROR_FILE,
-    log_level=config.LOG_LEVEL
-)
+setup_logging(log_level=config.LOG_LEVEL)
 logger = get_logger(__name__)
 
 # Инициализация бота и диспетчера
@@ -44,12 +40,18 @@ async def on_startup():
         await db.init_schema()
         logger.info("Database connected and schema initialized")
         
-        # Здесь будут регистрироваться обработчики
-        # from handlers import posts, admin, reminders, digest
-        # dp.include_router(posts.router)
-        # dp.include_router(admin.router)
-        # dp.include_router(reminders.router)
-        # dp.include_router(digest.router)
+        # Регистрация обработчиков
+        from handlers import posts, admin, reminders, digest, ai
+        dp.include_router(admin.router)  # Админские команды первыми
+        dp.include_router(posts.router)
+        dp.include_router(reminders.router)
+        dp.include_router(digest.router)
+        dp.include_router(ai.router)
+        
+        # Инициализация планировщика напоминаний
+        from services.reminders import reminder_service
+        reminder_service.set_bot(bot)
+        await reminder_service.start_scheduler()
         
         logger.info("Bot startup completed")
         
@@ -60,6 +62,10 @@ async def on_startup():
 async def on_shutdown():
     """Очистка при завершении"""
     try:
+        # Остановка планировщика напоминаний
+        from services.reminders import reminder_service
+        await reminder_service.stop_scheduler()
+        
         await db.close()
         logger.info("Database connection closed")
         logger.info("Bot shutdown completed")

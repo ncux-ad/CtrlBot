@@ -46,6 +46,16 @@ cp env.example .env
 ./start_test.sh    # Тестовая версия (без БД)
 ```
 
+### Менеджер виртуального окружения
+```bash
+# Windows
+venv_manager.bat
+
+# Linux/macOS
+chmod +x venv_manager.sh
+./venv_manager.sh
+```
+
 ### Ручная установка
 ```bash
 # 1. Создайте виртуальное окружение

@@ -5,10 +5,24 @@ import logging.handlers
 import sys
 from pathlib import Path
 
-def setup_logging(log_file_path: str = '/var/log/post_bot.log', 
-                  error_file_path: str = '/var/log/post_bot.err',
+def setup_logging(log_file_path: str = None, 
+                  error_file_path: str = None,
                   log_level: str = 'INFO') -> None:
     """Настройка системы логирования"""
+    
+    # Определяем пути для логов в зависимости от среды
+    import os
+    if os.path.exists("/app"):
+        # В Docker контейнере
+        base_log_dir = "/app/logs"
+    else:
+        # В обычной среде
+        base_log_dir = "logs"
+    
+    if log_file_path is None:
+        log_file_path = f"{base_log_dir}/post_bot.log"
+    if error_file_path is None:
+        error_file_path = f"{base_log_dir}/post_bot.err"
     
     # Создаем директории для логов если их нет
     log_file = Path(log_file_path)
