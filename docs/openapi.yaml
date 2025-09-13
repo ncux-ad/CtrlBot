@@ -1,0 +1,19 @@
+openapi: 3.0.3
+info:
+  title: ControllerBot Lite API
+  version: '0.1.0'
+paths:
+  /api/v1/export/week:
+    get:
+      summary: Export weekly digest
+      parameters:
+        - in: query
+          name: channel_id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Excel file }
+  /api/v1/posts:
+    get:
+      summary: List posts
+      responses: { '200': { description: OK } }

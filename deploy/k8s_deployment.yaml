@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controllerbot
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: controllerbot }
+  template:
+    metadata:
+      labels: { app: controllerbot }
+    spec:
+      containers:
+        - name: bot
+          image: your-dockerhub/controllerbot-lite:latest
+          envFrom:
+            - secretRef: { name: controllerbot-secrets }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "300m", memory: "256Mi" }

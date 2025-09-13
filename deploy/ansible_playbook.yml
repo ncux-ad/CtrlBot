@@ -1,0 +1,29 @@
+---
+- hosts: controllerbot
+  become: true
+  tasks:
+    - name: Install packages
+      apt:
+        name: [python3, python3-venv, git, postgresql, curl]
+        update_cache: yes
+    - name: Create app dir
+      file: { path: /opt/controllerbot_lite, state: directory }
+    - name: Sync code
+      git:
+        repo: 'https://github.com/your-org/controllerbot_lite.git'
+        dest: /opt/controllerbot_lite
+        version: main
+    - name: Install venv
+      shell: |
+        cd /opt/controllerbot_lite
+        python3 -m venv venv
+        . venv/bin/activate && pip install -r requirements.txt
+    - name: Install systemd unit
+      copy:
+        src: deploy/controllerbot.service
+        dest: /etc/systemd/system/controllerbot.service
+    - name: Enable service
+      systemd:
+        name: controllerbot
+        enabled: yes
+        state: started

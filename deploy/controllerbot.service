@@ -1,0 +1,16 @@
+[Unit]
+Description=ControllerBot Lite 2.0
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/controllerbot_lite
+ExecStart=/usr/bin/python3 bot.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/post_bot.log
+StandardError=append:/var/log/post_bot.err
+
+[Install]
+WantedBy=multi-user.target
