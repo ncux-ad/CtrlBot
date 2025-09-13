@@ -3,6 +3,7 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import Message, CallbackQuery
 from typing import List
+from config import config
 
 class IsAdminFilter(BaseFilter):
     """Фильтр для проверки админских прав"""
@@ -67,3 +68,9 @@ class AdminCallbackFilter(CallbackDataFilter):
     
     def __init__(self):
         super().__init__("manage_")
+
+class IsConfigAdminFilter(BaseFilter):
+    """Фильтр для проверки админских прав из конфигурации"""
+    
+    async def __call__(self, message: Message) -> bool:
+        return message.from_user.id in config.ADMIN_IDS

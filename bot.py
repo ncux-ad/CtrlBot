@@ -30,10 +30,7 @@ bot = Bot(
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
-# Регистрация состояний FSM
-dp.include_router(PostCreationStates.router)
-dp.include_router(AdminStates.router)
-dp.include_router(DigestStates.router)
+# Регистрация состояний FSM (состояния регистрируются автоматически при использовании)
 
 async def on_startup():
     """Инициализация при запуске"""
@@ -57,7 +54,7 @@ async def on_startup():
         logger.info("Bot startup completed")
         
     except Exception as e:
-        logger.error(f"Startup failed: {e}")
+        logger.error("Startup failed: %s", e)
         raise
 
 async def on_shutdown():
@@ -67,14 +64,14 @@ async def on_shutdown():
         logger.info("Database connection closed")
         logger.info("Bot shutdown completed")
     except Exception as e:
-        logger.error(f"Shutdown error: {e}")
+        logger.error("Shutdown error: %s", e)
 
 async def main():
     """Главная функция"""
     try:
         # Обработчики сигналов для graceful shutdown
-        def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, shutting down...")
+        def signal_handler(signum, _frame):
+            logger.info("Received signal %s, shutting down...", signum)
             asyncio.create_task(on_shutdown())
             sys.exit(0)
         
@@ -89,7 +86,7 @@ async def main():
         await dp.start_polling(bot)
         
     except Exception as e:
-        logger.error(f"Bot error: {e}")
+        logger.error("Bot error: %s", e)
         raise
     finally:
         await on_shutdown()
@@ -100,5 +97,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
     except Exception as e:
-        logger.error(f"Fatal error: {e}")
+        logger.error("Fatal error: %s", e)
         sys.exit(1)

@@ -1,7 +1,7 @@
 # Config loader
 
 import os
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 
 # Загружаем переменные из .env файла
@@ -12,6 +12,7 @@ class Config:
     
     # Telegram Bot
     BOT_TOKEN: str = os.getenv('BOT_TOKEN', '')
+    ADMIN_IDS: List[int] = [int(x) for x in os.getenv('ADMIN_IDS', '').split(',') if x.strip()]
     
     # Database
     DB_HOST: str = os.getenv('DB_HOST', 'localhost')
@@ -45,6 +46,10 @@ class Config:
         missing = [field for field in required if not field]
         if missing:
             raise ValueError(f"Missing required config: {missing}")
+        
+        # Проверяем, что есть хотя бы один админ
+        if not cls.ADMIN_IDS:
+            raise ValueError("ADMIN_IDS must contain at least one user ID")
         
         return True
 
