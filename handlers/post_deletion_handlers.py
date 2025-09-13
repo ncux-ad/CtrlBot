@@ -166,8 +166,8 @@ async def callback_confirm_delete_post(callback: CallbackQuery):
         if post['status'] == 'published' and post['message_id']:
             try:
                 publisher = get_publisher()
-                await publisher.delete_message_from_channel(post['channel_id'], post['message_id'])
-                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['channel_id']}")
+                await publisher.delete_message_from_channel(post['tg_channel_id'], post['message_id'])
+                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['tg_channel_id']}")
             except Exception as e:
                 logger.warning(f"⚠️ Не удалось удалить сообщение из канала: {e}")
                 # Продолжаем удаление в БД даже если не удалось удалить из канала
@@ -259,8 +259,8 @@ async def callback_confirm_permanent_delete(callback: CallbackQuery):
         if post['status'] == 'published' and post['message_id']:
             try:
                 publisher = get_publisher()
-                await publisher.delete_message_from_channel(post['channel_id'], post['message_id'])
-                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['channel_id']}")
+                await publisher.delete_message_from_channel(post['tg_channel_id'], post['message_id'])
+                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['tg_channel_id']}")
             except Exception as e:
                 logger.warning(f"⚠️ Не удалось удалить сообщение из канала: {e}")
         

@@ -45,7 +45,7 @@ async def cmd_start(message: Message):
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-            [InlineKeyboardButton(text="📋 Мои посты", callback_data="view_posts")],
+            [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
             [InlineKeyboardButton(text="📢 Проверить отложенные", callback_data="check_scheduled_posts")],
             [InlineKeyboardButton(text="🔧 Исправить статусы", callback_data="fix_post_status")],
             [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
@@ -131,7 +131,7 @@ async def btn_my_posts(message: Message):
         "📋 *Мои посты*\n\n"
         "Используйте кнопки ниже для навигации:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📋 Просмотр постов", callback_data="view_posts")],
+            [InlineKeyboardButton(text="📋 Просмотр постов", callback_data="my_posts")],
             [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
         ])
     )
@@ -411,7 +411,7 @@ async def callback_back_to_admin(callback: CallbackQuery):
                 "Выберите действие:",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-                    [InlineKeyboardButton(text="📋 Мои посты", callback_data="view_posts")],
+                    [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
                     [InlineKeyboardButton(text="📢 Проверить отложенные", callback_data="check_scheduled_posts")],
                     [InlineKeyboardButton(text="🔧 Исправить статусы", callback_data="fix_post_status")],
                     [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
@@ -502,101 +502,10 @@ async def callback_ai_functions(callback: CallbackQuery):
 
 @router.callback_query(F.data == "view_posts", admin_filter)
 async def callback_view_posts(callback: CallbackQuery):
-    """Просмотр постов пользователя"""
-    try:
-        from services.post_service import post_service
-        from utils.timezone_utils import format_datetime
-        
-        logger.info(f"📋 Просмотр постов пользователя {callback.from_user.id}")
-        
-        # Проверяем, есть ли привязанные каналы
-        from database import db
-        channels = await db.fetch_all("SELECT id, tg_channel_id, title FROM channels")
-        
-        if not channels:
-            await callback.message.edit_text(
-                "🔗 *Сначала привяжите канал!*\n\n"
-                "Для просмотра постов нужно привязать канал:\n\n"
-                "1️⃣ *Добавьте бота в канал как администратора*\n"
-                "   • Права: отправка сообщений\n"
-                "   • Редактирование сообщений\n\n"
-                "2️⃣ *Перешлите любое сообщение из канала боту*\n"
-                "   • Я автоматически определю ID канала\n"
-                "   • Сохраню настройки\n\n"
-                "3️⃣ *Готово!* Можете создавать и просматривать посты\n\n"
-                "💡 _Перешлите сообщение из канала прямо сейчас_",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="🔄 Проверить снова", callback_data="view_posts")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
-                ])
-            )
-            await callback.answer()
-            return
-        
-        # Получаем посты пользователя
-        posts = await post_service.get_user_posts(callback.from_user.id, limit=10)
-        
-        if not posts:
-            await callback.message.edit_text(
-                "📋 *Мои посты*\n\n"
-                "У вас пока нет постов.\n"
-                "Создайте первый пост командой /new_post",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
-                ])
-            )
-            await callback.answer()
-            return
-        
-        # Формируем список постов
-        text = "📋 *Мои посты*\n\n"
-        
-        for i, post in enumerate(posts, 1):
-            status_emoji = {
-                'draft': '📝',
-                'scheduled': '⏰',
-                'published': '✅',
-                'deleted': '❌'
-            }.get(post['status'], '❓')
-            
-            text += f"{i}. {status_emoji} *#{post['id']}*\n"
-            text += f"   📝 {post['body_md'][:50]}{'...' if len(post['body_md']) > 50 else ''}\n"
-            
-            if post['series_title']:
-                text += f"   📚 {post['series_title']}\n"
-            
-            if post['tags_cache']:
-                tags = ', '.join(post['tags_cache'][:3])
-                text += f"   🏷️ {tags}\n"
-            
-            if post['scheduled_at']:
-                text += f"   ⏰ {format_datetime(post['scheduled_at'])}\n"
-            
-            text += f"   📅 {format_datetime(post['created_at'])}\n\n"
-        
-        # Добавляем кнопки
-        keyboard = []
-        if len(posts) >= 10:
-            keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
-        keyboard.append([InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")])
-        keyboard.append([InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")])
-        
-        await callback.message.edit_text(
-            text,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard)
-        )
-        await callback.answer()
-        
-    except Exception as e:
-        logger.error(f"Error in callback_view_posts: {e}")
-        await callback.message.edit_text(
-            f"❌ *Ошибка загрузки постов*\n\n{str(e)}",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
-            ])
-        )
-        await callback.answer()
+    """Обработчик кнопки 'Просмотр постов' - перенаправляем на my_posts"""
+    # Перенаправляем на обработчик my_posts с пагинацией
+    from handlers.post_handlers import callback_my_posts
+    await callback_my_posts(callback)
 
 @router.callback_query(F.data == "get_channel_id", admin_filter)
 async def callback_get_channel_id(callback: CallbackQuery):
