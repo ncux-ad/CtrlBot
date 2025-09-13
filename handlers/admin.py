@@ -660,7 +660,7 @@ async def handle_channel_forward(message: Message):
                 f"📢 *Канал:* {channel_title}\n"
                 f"🆔 *ID:* `{channel_id}`\n\n"
                 f"Теперь бот может публиковать посты в этот канал!\n\n"
-                f"💡 <i>Хотите создать первый пост?</i>",
+                f"💡 _Хотите создать первый пост?_",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
                     [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]

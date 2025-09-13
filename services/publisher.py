@@ -239,8 +239,7 @@ class PostPublisher:
                 first_success = results['success'][0]
                 await self._update_post_in_db(
                     post_data['id'], 
-                    first_success['message_id'],
-                    results['success_count']
+                    first_success['message_id']
                 )
                 logger.info(f"✅ БД обновлена для поста {post_data['id']}")
             except Exception as e:
