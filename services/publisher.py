@@ -452,8 +452,13 @@ class PostPublisher:
             logger.info(f"✅ Сообщение {message_id} удалено из канала {channel_id}")
             return True
         except Exception as e:
-            logger.error(f"❌ Ошибка удаления сообщения {message_id} из канала {channel_id}: {e}")
-            return False
+            error_msg = str(e)
+            if "message to delete not found" in error_msg:
+                logger.warning(f"⚠️ Сообщение {message_id} уже удалено из канала {channel_id}")
+                return True  # Считаем успешным, если сообщение уже удалено
+            else:
+                logger.error(f"❌ Ошибка удаления сообщения {message_id} из канала {channel_id}: {e}")
+                return False
 
 # Глобальный экземпляр (будет инициализирован в bot.py)
 publisher = None

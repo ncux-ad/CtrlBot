@@ -81,7 +81,7 @@ async def callback_view_post(callback: CallbackQuery):
             keyboard.append([InlineKeyboardButton(text="⏰ Изменить время", callback_data=f"reschedule_post_{post_id}")])
             keyboard.append([InlineKeyboardButton(text="❌ Отменить", callback_data=f"cancel_scheduled_post_{post_id}")])
         elif post['status'] == 'published':
-            keyboard.append([InlineKeyboardButton(text="🗑️ Удалить из канала", callback_data=f"delete_post_{post_id}")])
+            keyboard.append([InlineKeyboardButton(text="🗑️ Удалить из канала", callback_data=f"delete_from_channel_{post_id}")])
         
         # Кнопка удаления из БД (для всех статусов кроме уже удаленных)
         if post['status'] != 'deleted':
@@ -162,18 +162,36 @@ async def callback_confirm_delete_post(callback: CallbackQuery):
             await callback.answer("❌ Нет прав для удаления этого поста", show_alert=True)
             return
         
-        # Удаляем сообщение из канала, если пост опубликован
+        # Сначала удаляем сообщение из канала (внешняя операция)
+        channel_deleted = False
         if post['status'] == 'published' and post['message_id']:
             try:
-                publisher = get_publisher()
-                await publisher.delete_message_from_channel(post['tg_channel_id'], post['message_id'])
-                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['tg_channel_id']}")
+                # Получаем tg_channel_id из таблицы channels
+                from database import db
+                channel = await db.fetch_one(
+                    "SELECT tg_channel_id FROM channels WHERE id = $1", 
+                    post['channel_id']
+                )
+                
+                if channel and channel['tg_channel_id']:
+                    publisher = get_publisher()
+                    channel_deleted = await publisher.delete_message_from_channel(channel['tg_channel_id'], post['message_id'])
+                    if channel_deleted:
+                        logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {channel['tg_channel_id']}")
+                    else:
+                        logger.warning(f"⚠️ Не удалось удалить сообщение из канала {channel['tg_channel_id']}")
+                else:
+                    logger.warning(f"⚠️ Не найден tg_channel_id для channel_id {post['channel_id']}")
             except Exception as e:
-                logger.warning(f"⚠️ Не удалось удалить сообщение из канала: {e}")
-                # Продолжаем удаление в БД даже если не удалось удалить из канала
+                logger.error(f"❌ Ошибка удаления сообщения из канала: {e}")
+                channel_deleted = False
         
-        # Помечаем пост как удаленный в БД
-        success = await post_service.delete_post(post_id)
+        # Только после успешного удаления из канала удаляем из БД (внутренняя операция)
+        if not post['message_id'] or channel_deleted:
+            success = await post_service.delete_post(post_id)
+        else:
+            await callback.answer("❌ Не удалось удалить из канала. Операция отменена.", show_alert=True)
+            return
         
         if success:
             await callback.message.edit_text(
@@ -255,18 +273,38 @@ async def callback_confirm_permanent_delete(callback: CallbackQuery):
             await callback.answer("❌ Нет прав для удаления этого поста", show_alert=True)
             return
         
-        # Удаляем сообщение из канала, если пост опубликован
+        # Сначала удаляем сообщение из канала (внешняя операция)
+        channel_deleted = False
         if post['status'] == 'published' and post['message_id']:
             try:
-                publisher = get_publisher()
-                await publisher.delete_message_from_channel(post['tg_channel_id'], post['message_id'])
-                logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {post['tg_channel_id']}")
+                # Получаем tg_channel_id из таблицы channels
+                from database import db
+                channel = await db.fetch_one(
+                    "SELECT tg_channel_id FROM channels WHERE id = $1", 
+                    post['channel_id']
+                )
+                
+                if channel and channel['tg_channel_id']:
+                    publisher = get_publisher()
+                    channel_deleted = await publisher.delete_message_from_channel(channel['tg_channel_id'], post['message_id'])
+                    if channel_deleted:
+                        logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {channel['tg_channel_id']}")
+                    else:
+                        logger.warning(f"⚠️ Не удалось удалить сообщение из канала {channel['tg_channel_id']}")
+                else:
+                    logger.warning(f"⚠️ Не найден tg_channel_id для channel_id {post['channel_id']}")
             except Exception as e:
-                logger.warning(f"⚠️ Не удалось удалить сообщение из канала: {e}")
+                logger.error(f"❌ Ошибка удаления сообщения из канала: {e}")
+                channel_deleted = False
         
-        # Удаляем пост из БД (пока используем мягкое удаление)
-        # TODO: Добавить функцию полного удаления из БД
-        success = await post_service.delete_post(post_id)
+        # Только после успешного удаления из канала удаляем из БД (внутренняя операция)
+        if not post['message_id'] or channel_deleted:
+            # Удаляем пост из БД (пока используем мягкое удаление)
+            # TODO: Добавить функцию полного удаления из БД
+            success = await post_service.delete_post(post_id)
+        else:
+            await callback.answer("❌ Не удалось удалить из канала. Операция отменена.", show_alert=True)
+            return
         
         if success:
             await callback.message.edit_text(
@@ -288,3 +326,74 @@ async def callback_confirm_permanent_delete(callback: CallbackQuery):
     except Exception as e:
         logger.error(f"Ошибка при постоянном удалении поста: {e}")
         await callback.answer("❌ Ошибка удаления поста", show_alert=True)
+
+@router.callback_query(F.data.startswith("delete_from_channel_"), admin_filter)
+async def callback_delete_from_channel(callback: CallbackQuery):
+    """Подтверждение удаления поста из канала Telegram"""
+    post_id = int(callback.data.split("_")[3])
+    logger.info(f"⚠️ Запрос на удаление поста ID: {post_id} из канала пользователем {callback.from_user.id}")
+
+    post = await post_service.get_post(post_id)
+    if not post or post['user_id'] != callback.from_user.id or not post['message_id'] or not post['channel_id']:
+        await callback.answer("❌ Пост не найден, не опубликован или у вас нет прав!", show_alert=True)
+        return
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ Подтвердить удаление из канала", callback_data=f"confirm_delete_from_channel_{post_id}")],
+        [InlineKeyboardButton(text="❌ Отмена", callback_data=f"view_post_{post_id}")]
+    ])
+    await callback.message.edit_text(
+        f"⚠️ *Вы уверены, что хотите удалить пост #{post_id} из канала Telegram?*\n\n"
+        f"Это действие *необратимо* и удалит сообщение из канала для всех пользователей.\n"
+        f"Пост останется в базе данных с текущим статусом.",
+        reply_markup=keyboard
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("confirm_delete_from_channel_"), admin_filter)
+async def callback_confirm_delete_from_channel(callback: CallbackQuery):
+    """Выполнение удаления поста из канала Telegram"""
+    post_id = int(callback.data.split("_")[4])
+    logger.info(f"🗑️ Удаление поста ID: {post_id} из канала пользователем {callback.from_user.id}")
+
+    try:
+        post = await post_service.get_post(post_id)
+        if not post or post['user_id'] != callback.from_user.id or not post['message_id'] or not post['channel_id']:
+            await callback.answer("❌ Пост не найден, не опубликован или у вас нет прав!", show_alert=True)
+            return
+
+        # Сначала удаляем сообщение из канала (внешняя операция)
+        channel_deleted = False
+        try:
+            # Получаем tg_channel_id из таблицы channels
+            from database import db
+            channel = await db.fetch_one(
+                "SELECT tg_channel_id FROM channels WHERE id = $1", 
+                post['channel_id']
+            )
+            
+            if channel and channel['tg_channel_id']:
+                publisher = get_publisher()
+                channel_deleted = await publisher.delete_message_from_channel(channel['tg_channel_id'], post['message_id'])
+                if channel_deleted:
+                    logger.info(f"✅ Сообщение {post['message_id']} удалено из канала {channel['tg_channel_id']}")
+                else:
+                    logger.warning(f"⚠️ Не удалось удалить сообщение из канала {channel['tg_channel_id']}")
+            else:
+                logger.warning(f"⚠️ Не найден tg_channel_id для channel_id {post['channel_id']}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка удаления сообщения из канала: {e}")
+            channel_deleted = False
+
+        if channel_deleted:
+            await callback.answer("✅ Пост успешно удален из канала!", show_alert=True)
+            # Обновляем детали поста
+            await callback_view_post(callback)
+        else:
+            await callback.answer("❌ Не удалось удалить пост из канала!", show_alert=True)
+            # Обновляем детали поста
+            await callback_view_post(callback)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка удаления поста {post_id} из канала: {e}")
+        await callback.answer("❌ Ошибка удаления из канала", show_alert=True)
