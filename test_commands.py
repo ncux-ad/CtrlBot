@@ -15,8 +15,8 @@ async def test_commands():
     test_user = User(
         id=config.ADMIN_IDS[0] if config.ADMIN_IDS else 123456789,  # Используем ID из конфига
         is_bot=False,
-        first_name="Test",
-        last_name="User",
+        first_name="Андрей",
+        last_name="Данилин",
         username="test_user"
     )
     
