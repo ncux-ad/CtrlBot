@@ -23,7 +23,7 @@ admin_filter = IsConfigAdminFilter()
 
 @router.message(Command("ai"), admin_filter)
 async def cmd_ai(message: Message):
-    """Главное меню AI функций"""
+    """Админ-панель AI функций"""
     try:
         # Проверяем статус API
         status = await ai_service.check_api_status()

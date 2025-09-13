@@ -140,7 +140,7 @@ function hello() {
     if post_text:
         keyboard = [[InlineKeyboardButton(text="🔙 Назад к посту", callback_data="back_to_preview")]]
     else:
-        keyboard = [[InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]]
+        keyboard = [[InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]]
     
     await callback.message.answer(
         example_text,
@@ -159,7 +159,7 @@ async def callback_back_to_preview(callback: CallbackQuery, state: FSMContext):
             "❌ *Текст поста не найден*\n\n"
             "Создайте новый пост командой /new_post",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
             ])
         )
     else:
@@ -171,12 +171,12 @@ async def callback_back_to_preview(callback: CallbackQuery, state: FSMContext):
     
     await callback.answer()
 
-@router.callback_query(F.data == "back_to_main")
-async def callback_back_to_main_from_example(callback: CallbackQuery, state: FSMContext):
-    """Возврат в главное меню из примера Markdown"""
+@router.callback_query(F.data == "back_to_admin")
+async def callback_back_to_admin_from_example(callback: CallbackQuery, state: FSMContext):
+    """Возврат в админ-панель из примера Markdown"""
     await state.clear()
     await callback.message.answer(
-        "🏠 *Главное меню*\n\n"
+        "👑 *Админ-панель*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -631,7 +631,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
                 "2. Нажмите '🔗 Получить ID канала'\n"
                 "3. Перешлите сообщение из канала",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                    [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
                 ])
             )
             await callback.answer()
@@ -677,7 +677,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
             result_text,
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
             ])
         )
         
@@ -693,7 +693,7 @@ async def callback_publish_post(callback: CallbackQuery, state: FSMContext):
             "❌ *Ошибка публикации поста*\n\n"
             "Попробуйте еще раз или обратитесь к администратору.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
             ])
         )
     
@@ -708,7 +708,7 @@ async def callback_cancel_post(callback: CallbackQuery, state: FSMContext):
             "❌ *Создание поста отменено*\n\n"
             "Используйте кнопки ниже для навигации:",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
             ])
         )
     except Exception as e:
@@ -728,7 +728,7 @@ async def cmd_my_posts(message: Message):
                 "У вас пока нет постов.\n"
                 "Создайте первый пост командой /new_post",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                    [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
                 ])
             )
             return
@@ -763,7 +763,7 @@ async def cmd_my_posts(message: Message):
         keyboard = []
         if len(posts) >= 10:
             keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
-        keyboard.append([InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")])
+        keyboard.append([InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")])
         
         await message.answer(
             text,
@@ -776,7 +776,7 @@ async def cmd_my_posts(message: Message):
             "❌ *Ошибка загрузки постов*\n\n"
             "Попробуйте еще раз или обратитесь к администратору.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+                [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
             ])
         )
 
@@ -809,7 +809,7 @@ _курсив_ - курсивный текст
     await message.answer(
         help_text, 
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+            [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
         ])
     )
 
@@ -862,6 +862,6 @@ async def handle_unknown(message: Message):
         "❓ *Неизвестная команда*\n\n"
         "Используйте /help для просмотра доступных команд.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🏠 Главное меню", callback_data="back_to_main")]
+            [InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")]
         ])
     )

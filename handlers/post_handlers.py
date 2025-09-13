@@ -743,12 +743,12 @@ async def callback_load_more_posts(callback: CallbackQuery):
         logger.error(f"Error in callback_load_more_posts: {e}")
         await callback.answer("❌ Ошибка загрузки постов", show_alert=True)
 
-@router.callback_query(F.data == "main_menu")
-async def callback_main_menu(callback: CallbackQuery, state: FSMContext):
-    """Возврат в главное меню"""
+@router.callback_query(F.data == "back_to_admin")
+async def callback_back_to_admin(callback: CallbackQuery, state: FSMContext):
+    """Возврат в админ-панель"""
     await state.clear()
     await callback.message.edit_text(
-        "🏠 *Главное меню*\n\n"
+        "👑 *Админ-панель*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],

@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from typing import List
 
 def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Главное меню бота"""
+    """Админ-панель бота"""
     keyboard = [
         [KeyboardButton(text="📝 Новый пост"), KeyboardButton(text="📋 Мои посты")],
         [KeyboardButton(text="🤖 AI помощник"), KeyboardButton(text="⏰ Напоминания")],
