@@ -447,6 +447,66 @@ class PostService:
             return False, f"Текст поста слишком длинный (максимум {config.MAX_POST_LENGTH} символов)"
         
         return True, ""
+    
+    async def cancel_scheduled_post(self, post_id: int) -> bool:
+        """Отменяет отложенную публикацию поста"""
+        try:
+            query = """
+                UPDATE posts 
+                SET status = 'cancelled', updated_at = NOW()
+                WHERE id = $1 AND status = 'scheduled'
+            """
+            result = await db.execute(query, post_id)
+            if result > 0:
+                logger.info(f"✅ Пост {post_id} отменен")
+                return True
+            else:
+                logger.warning(f"⚠️ Пост {post_id} не найден или не был отложенным")
+                return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка отмены поста {post_id}: {e}")
+            raise
+    
+    async def retry_failed_post(self, post_id: int) -> bool:
+        """Повторяет попытку публикации неудачного поста"""
+        try:
+            query = """
+                UPDATE posts 
+                SET status = 'scheduled', updated_at = NOW()
+                WHERE id = $1 AND status = 'failed'
+            """
+            result = await db.execute(query, post_id)
+            if result > 0:
+                logger.info(f"🔄 Пост {post_id} помечен для повторной публикации")
+                return True
+            else:
+                logger.warning(f"⚠️ Пост {post_id} не найден или не был неудачным")
+                return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка повтора поста {post_id}: {e}")
+            raise
+    
+    async def update_scheduled_time(self, post_id: int, new_scheduled_at: datetime) -> bool:
+        """Обновляет время публикации отложенного поста"""
+        try:
+            # Конвертируем в UTC
+            utc_scheduled_at = to_utc(new_scheduled_at)
+            
+            query = """
+                UPDATE posts 
+                SET scheduled_at = $2, updated_at = NOW()
+                WHERE id = $1 AND status = 'scheduled'
+            """
+            result = await db.execute(query, post_id, utc_scheduled_at)
+            if result > 0:
+                logger.info(f"⏰ Время публикации поста {post_id} обновлено на {utc_scheduled_at}")
+                return True
+            else:
+                logger.warning(f"⚠️ Пост {post_id} не найден или не был отложенным")
+                return False
+        except Exception as e:
+            logger.error(f"❌ Ошибка обновления времени поста {post_id}: {e}")
+            raise
 
 # Глобальный экземпляр сервиса
 post_service = PostService()

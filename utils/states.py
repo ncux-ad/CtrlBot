@@ -11,6 +11,7 @@ class PostCreationStates(StatesGroup):
     choose_series = State()  # Выбор серии
     schedule = State()  # Планирование публикации
     enter_time = State()  # Ввод времени публикации
+    waiting_schedule_time = State()  # Ожидание ввода времени для изменения отложенного поста
     confirm = State()  # Подтверждение
 
 class AdminStates(StatesGroup):

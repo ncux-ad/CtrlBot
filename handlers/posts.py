@@ -7,7 +7,7 @@
 
 import re
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
@@ -53,13 +53,13 @@ async def cmd_new_post(message: Message, state: FSMContext):
     """Команда создания нового поста"""
     await state.set_state(PostCreationStates.enter_text)
     await message.answer(
-        "📝 **Создание нового поста**\n\n"
-        "Отправьте текст поста в формате Markdown.\n"
-        "Можно использовать **жирный**, __курсив__, ```код``` и другие\n"
+        "📝 *Создание нового поста*\n\n"
+        "Отправьте текст поста в формате Markdown\\.\n"
+        "Можно использовать *жирный*, _курсив_, `код` и другие\n"
         "элементы.\n\n"
         "👇👇👇\n"
-        "**В поле ввода наберите пост**\n"
-        "(желательно Ctrl+C и Ctrl+V для сохранения форматирования!)"
+        "*В поле ввода наберите пост*\n"
+        "\\(желательно Ctrl\\+C и Ctrl\\+V для сохранения форматирования!\\)"
     )
 
 # Удален - заменен универсальным обработчиком

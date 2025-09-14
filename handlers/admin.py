@@ -7,7 +7,7 @@
 
 import os
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
@@ -79,13 +79,13 @@ async def cmd_ping(message: Message):
 async def btn_new_post(message: Message, state: FSMContext):
     """Обработчик кнопки 'Новый пост' - перенаправляем на inline меню"""
     await message.answer(
-        "📝 **Создание нового поста**\n\n"
-        "Отправьте текст поста в формате Markdown.\n"
+        "📝 *Создание нового поста*\n\n"
+        "Отправьте текст поста в формате Markdown\\.\n"
         "Можно использовать *жирный*, _курсив_, `код` и другие\n"
         "элементы.\n\n"
         "👇👇👇\n"
-        "**В поле ввода наберите пост**\n"
-        "(желательно Ctrl+C и Ctrl+V для сохранения форматирования!)"
+        "*В поле ввода наберите пост*\n"
+        "\\(желательно Ctrl\\+C и Ctrl\\+V для сохранения форматирования!\\)"
     )
 
 @router.message(F.text == "🤖 AI помощник")

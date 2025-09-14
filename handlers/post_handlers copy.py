@@ -1286,11 +1286,24 @@ async def process_any_post_message(message: Message, state: FSMContext):
         logger.info(f"📝 Получен caption: '{text}'")
         logger.info(f"📏 Длина caption: {len(text)} символов")
         logger.info(f"🎨 Caption entities: {len(entities) if entities else 0}")
+        print("🔍 ПОСЛЕ ОБРАБОТКИ CAPTION")
+        logger.info("🔍 ПОСЛЕ ОБРАБОТКИ CAPTION")
+    else:
+        logger.warning("❌ Сообщение не содержит текста")
+        await message.answer("❌ *Не удалось получить текст*\n\nСообщение не содержит текста.")
+        return
     
     # Обрабатываем медиа-файлы
+    print("🔍 НАЧИНАЕМ ПРОВЕРКУ МЕДИА")
     logger.info("🔍 НАЧИНАЕМ ПРОВЕРКУ МЕДИА")
+    print(f"🔍 Проверяем медиа: photo={bool(message.photo)}, video={bool(message.video)}, document={bool(message.document)}")
     logger.info(f"🔍 Проверяем медиа: photo={bool(message.photo)}, video={bool(message.video)}, document={bool(message.document)}")
-    
+    print(f"🔍 message.photo: {message.photo}")
+    logger.info(f"🔍 message.photo: {message.photo}")
+    print(f"🔍 message.video: {message.video}")
+    logger.info(f"🔍 message.video: {message.video}")
+    print(f"🔍 message.document: {message.document}")
+    logger.info(f"🔍 message.document: {message.document}")
     if message.photo:
         # Фото
         photo = message.photo[-1]  # Берем самое большое фото
