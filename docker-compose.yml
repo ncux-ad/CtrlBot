@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   ctrlbot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
     container_name: ctrlbot
     restart: unless-stopped
     environment:

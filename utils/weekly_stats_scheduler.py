@@ -8,7 +8,7 @@
 import asyncio
 from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from aiogram.types import ParseMode
+from aiogram.enums import ParseMode
 from services.post_service import post_service
 from utils.post_statistics import PostStatistics
 from utils.logging import get_logger

@@ -7,7 +7,8 @@
 
 import re
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
+from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.enums import ParseMode
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import default_state
@@ -853,7 +854,7 @@ async def callback_change_schedule_time(callback: CallbackQuery, state: FSMConte
             parse_mode=ParseMode.MARKDOWN_V2
         )
         await callback.answer()
-        
+
     except Exception as e:
         logger.error(f"❌ Ошибка изменения времени поста: {e}")
         await callback.answer("❌ Ошибка изменения времени", show_alert=True)
@@ -1263,175 +1264,126 @@ _курсив_ - курсивный текст
         ])
     )
 
-@router.message(StateFilter(PostCreationStates.enter_text))
+@router.message(
+    StateFilter(PostCreationStates.enter_text),
+    F.photo | F.video | F.document | F.animation | F.voice | F.video_note | F.audio | F.text
+)
 async def process_any_post_message(message: Message, state: FSMContext):
     """Обработчик для создания поста с извлечением entities и медиа"""
-    logger.info("=== НАЧАЛО ОБРАБОТКИ СООБЩЕНИЯ ===")
-    
-    # Инициализируем переменные
-    text = ""
-    entities = None
-    media_data = None
+    try:
+        # Инициализируем переменные
+        text = ""
+        entities = None
+        media_data = None
+        
+        # Обрабатываем медиа-файлы
+        if message.content_type in {"photo", "video", "document", "animation", "voice", "video_note", "audio"}:
+            logger.info(f"Обрабатываем медиа типа: {message.content_type}")
+            media_obj = getattr(message, message.content_type)
+            if isinstance(media_obj, list):  # например, message.photo — список
+                media_obj = media_obj[-1]
+            
+            media_data = {
+                "type": message.content_type,
+                "file_id": media_obj.file_id,
+                "file_unique_id": media_obj.file_unique_id
+            }
+            
+            # Добавляем специфичные поля для разных типов медиа
+            if hasattr(media_obj, 'width'):
+                media_data['width'] = media_obj.width
+            if hasattr(media_obj, 'height'):
+                media_data['height'] = media_obj.height
+            if hasattr(media_obj, 'duration'):
+                media_data['duration'] = media_obj.duration
+            if hasattr(media_obj, 'file_name'):
+                media_data['file_name'] = media_obj.file_name
+            if hasattr(media_obj, 'mime_type'):
+                media_data['mime_type'] = media_obj.mime_type
+            if hasattr(media_obj, 'file_size'):
+                media_data['file_size'] = media_obj.file_size
+            if hasattr(media_obj, 'length'):
+                media_data['length'] = media_obj.length
+            if hasattr(media_obj, 'performer'):
+                media_data['performer'] = media_obj.performer
+            if hasattr(media_obj, 'title'):
+                media_data['title'] = media_obj.title
+            
+            logger.info(f"Получено медиа: {message.content_type} - {media_obj.file_id}")
     
     # Получаем текст из сообщения
     if message.text:
         text = message.text.strip()
-        entities = message.entities
-        logger.info(f"📝 Получен текст: '{text}'")
-        logger.info(f"📏 Длина текста: {len(text)} символов")
-        logger.info(f"🎨 Entities: {len(entities) if entities else 0}")
+            entities = message.entities
     elif message.caption:
         text = message.caption.strip()
-        entities = message.caption_entities
-        logger.info(f"📝 Получен caption: '{text}'")
-        logger.info(f"📏 Длина caption: {len(text)} символов")
-        logger.info(f"🎨 Caption entities: {len(entities) if entities else 0}")
-    
-    # Обрабатываем медиа-файлы
-    logger.info("🔍 НАЧИНАЕМ ПРОВЕРКУ МЕДИА")
-    logger.info(f"🔍 Проверяем медиа: photo={bool(message.photo)}, video={bool(message.video)}, document={bool(message.document)}")
-    
-    if message.photo:
-        # Фото
-        photo = message.photo[-1]  # Берем самое большое фото
-        media_data = {
-            'type': 'photo',
-            'file_id': photo.file_id,
-            'file_unique_id': photo.file_unique_id,
-            'width': photo.width,
-            'height': photo.height,
-            'file_size': photo.file_size
-        }
-        logger.info(f"📷 Получено фото: {photo.file_id} ({photo.width}x{photo.height})")
-    elif message.video:
-        # Видео
-        video = message.video
-        media_data = {
-            'type': 'video',
-            'file_id': video.file_id,
-            'file_unique_id': video.file_unique_id,
-            'width': video.width,
-            'height': video.height,
-            'duration': video.duration,
-            'file_size': video.file_size
-        }
-        logger.info(f"📹 Получено видео: {video.file_id} ({video.width}x{video.height}, {video.duration}с)")
-    elif message.document:
-        # Документ
-        doc = message.document
-        media_data = {
-            'type': 'document',
-            'file_id': doc.file_id,
-            'file_unique_id': doc.file_unique_id,
-            'file_name': doc.file_name,
-            'mime_type': doc.mime_type,
-            'file_size': doc.file_size
-        }
-        logger.info(f"📄 Получен документ: {doc.file_name} ({doc.mime_type})")
-    elif message.video_note:
-        # Видео-заметка
-        video_note = message.video_note
-        media_data = {
-            'type': 'video_note',
-            'file_id': video_note.file_id,
-            'file_unique_id': video_note.file_unique_id,
-            'length': video_note.length,
-            'duration': video_note.duration,
-            'file_size': video_note.file_size
-        }
-        logger.info(f"🎥 Получена видео-заметка: {video_note.file_id} ({video_note.length}px, {video_note.duration}с)")
-    elif message.voice:
-        # Голосовое сообщение
-        voice = message.voice
-        media_data = {
-            'type': 'voice',
-            'file_id': voice.file_id,
-            'file_unique_id': voice.file_unique_id,
-            'duration': voice.duration,
-            'mime_type': voice.mime_type,
-            'file_size': voice.file_size
-        }
-        logger.info(f"🎤 Получено голосовое: {voice.file_id} ({voice.duration}с)")
-    elif message.audio:
-        # Аудио
-        audio = message.audio
-        media_data = {
-            'type': 'audio',
-            'file_id': audio.file_id,
-            'file_unique_id': audio.file_unique_id,
-            'duration': audio.duration,
-            'performer': audio.performer,
-            'title': audio.title,
-            'mime_type': audio.mime_type,
-            'file_size': audio.file_size
-        }
-        logger.info(f"🎵 Получено аудио: {audio.title or 'Без названия'} ({audio.duration}с)")
-    
-    # Если нет текста и нет медиа
-    if not text and not media_data:
-        logger.warning("❌ Сообщение не содержит ни текста, ни медиа")
-        await message.answer("❌ *Не удалось получить контент*\n\nСообщение не содержит текста или медиа-файлов.")
+            entities = message.caption_entities
+        
+        # Если нет текста и нет медиа
+        if not text and not media_data:
+            logger.warning("Сообщение не содержит ни текста, ни медиа")
+            await message.answer("❌ *Не удалось получить контент*\n\nСообщение не содержит текста или медиа-файлов.")
         return
     
     # Валидация текста
-    logger.info("🔍 Начинаем валидацию текста")
     is_valid, error_msg = await post_service.validate_post_text(text)
     if not is_valid:
-        logger.warning(f"❌ Валидация не прошла: {error_msg}")
+            logger.warning(f"Валидация не прошла: {error_msg}")
         await message.answer(f"❌ {error_msg}")
         return
-    logger.info("✅ Валидация прошла успешно")
-    
-    # Сохраняем текст, entities и медиа
-    logger.info("💾 Сохраняем текст, entities и медиа в FSM state")
-    await state.update_data(
-        post_text=text, 
-        entities=entities,
-        media_data=media_data
-    )
+        
+        # Сохраняем текст, entities и медиа
+        await state.update_data(
+            post_text=text, 
+            entities=entities,
+            media_data=media_data
+        )
     await state.set_state(PostCreationStates.preview)
-    logger.info("✅ FSM state обновлен")
-    
-    # Показываем предпросмотр с медиа
-    logger.info("👁️ Отправляем предпросмотр")
-    
-    if media_data:
-        # Предпросмотр с медиа
-        preview_text = f"👁️ *Предпросмотр поста:*\n\n"
-        if text:
-            preview_text += f"{text}\n\n"
         
-        # Добавляем информацию о медиа
-        if media_data['type'] == 'photo':
-            preview_text += f"📷 *Фото* ({media_data['width']}x{media_data['height']})"
-        elif media_data['type'] == 'video':
-            preview_text += f"📹 *Видео* ({media_data['width']}x{media_data['height']}, {media_data['duration']}с)"
-        elif media_data['type'] == 'document':
-            preview_text += f"📄 *Документ*: {media_data['file_name']}"
-        elif media_data['type'] == 'video_note':
-            preview_text += f"🎥 *Видео-заметка* ({media_data['length']}px, {media_data['duration']}с)"
-        elif media_data['type'] == 'voice':
-            preview_text += f"🎤 *Голосовое сообщение* ({media_data['duration']}с)"
-        elif media_data['type'] == 'audio':
-            preview_text += f"🎵 *Аудио*: {media_data.get('title', 'Без названия')} ({media_data['duration']}с)"
-        
-        await message.answer(
-            preview_text,
-            reply_markup=get_post_actions_keyboard()
-        )
-    else:
-        # Простой текстовый предпросмотр
-        await message.answer(
-            f"👁️ *Предпросмотр поста:*\n\n{text}",
-            reply_markup=get_post_actions_keyboard()
-        )
+        # Показываем предпросмотр с медиа
+        if media_data:
+            # Предпросмотр с медиа
+            preview_text = f"👁️ *Предпросмотр поста:*\n\n"
+            if text:
+                preview_text += f"{text}\n\n"
+            
+            # Добавляем информацию о медиа
+            if media_data['type'] == 'photo':
+                preview_text += f"📷 *Фото* ({media_data['width']}x{media_data['height']})"
+            elif media_data['type'] == 'video':
+                preview_text += f"📹 *Видео* ({media_data['width']}x{media_data['height']}, {media_data['duration']}с)"
+            elif media_data['type'] == 'document':
+                preview_text += f"📄 *Документ*: {media_data['file_name']}"
+            elif media_data['type'] == 'video_note':
+                preview_text += f"🎥 *Видео-заметка* ({media_data['length']}px, {media_data['duration']}с)"
+            elif media_data['type'] == 'voice':
+                preview_text += f"🎤 *Голосовое сообщение* ({media_data['duration']}с)"
+            elif media_data['type'] == 'audio':
+                preview_text += f"🎵 *Аудио*: {media_data.get('title', 'Без названия')} ({media_data['duration']}с)"
+            
+    await message.answer(
+                preview_text,
+        reply_markup=get_post_actions_keyboard()
+    )
+        else:
+            # Простой текстовый предпросмотр
+            await message.answer(
+                f"👁️ *Предпросмотр поста:*\n\n{text}",
+                reply_markup=get_post_actions_keyboard()
+            )
     
-    logger.info("✅ Предпросмотр отправлен успешно")
-    logger.info("=== КОНЕЦ ОБРАБОТКИ СООБЩЕНИЯ ===")
+    except Exception as e:
+        logger.error(f"Ошибка в process_any_post_message: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        await message.answer("❌ *Произошла ошибка при обработке сообщения*\n\nПопробуйте еще раз.")
 
 @router.message()
-async def handle_unknown(message: Message):
+async def handle_unknown(message: Message, state: FSMContext):
     """Обработка неизвестных сообщений"""
+    current_state = await state.get_state()
+    logger.info(f"Неизвестное сообщение от {message.from_user.id}, FSM: {current_state}")
+    
     await message.answer(
         "❓ *Неизвестная команда*\n\n"
         "Используйте /help для просмотра доступных команд.",
