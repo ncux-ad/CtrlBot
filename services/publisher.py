@@ -176,6 +176,85 @@ class PostPublisher:
             logger.error(f"❌ Ошибка копирования сообщения: {e}")
             return None
     
+    async def publish_poll(
+        self,
+        chat_id: int,
+        question: str,
+        options: List[str],
+        is_anonymous: bool = True,
+        type: str = "regular",
+        allows_multiple_answers: bool = False,
+        correct_option_id: Optional[int] = None,
+        explanation: Optional[str] = None,
+        explanation_entities: Optional[List[MessageEntity]] = None,
+        open_period: Optional[int] = None,
+        close_date: Optional[int] = None,
+        is_closed: bool = False,
+        disable_notification: bool = False,
+        protect_content: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        allow_sending_without_reply: bool = False,
+        reply_markup: Optional[InlineKeyboardMarkup] = None
+    ) -> Optional[Message]:
+        """
+        Публикует опрос в канал
+        
+        Args:
+            chat_id: ID канала/чата
+            question: Вопрос опроса
+            options: Список вариантов ответов (2-10)
+            is_anonymous: Анонимный опрос
+            type: Тип опроса (regular, quiz)
+            allows_multiple_answers: Разрешить несколько ответов
+            correct_option_id: ID правильного ответа (для quiz)
+            explanation: Объяснение (для quiz)
+            explanation_entities: Entities для объяснения
+            open_period: Время жизни опроса в секундах
+            close_date: Время закрытия (Unix timestamp)
+            is_closed: Закрыт ли опрос
+            disable_notification: Отключить уведомления
+            protect_content: Защитить контент
+            reply_to_message_id: Ответ на сообщение
+            allow_sending_without_reply: Разрешить отправку без ответа
+            reply_markup: Inline клавиатура
+            
+        Returns:
+            Message объект или None при ошибке
+        """
+        try:
+            logger.info(f"📊 Публикуем опрос в канал {chat_id}")
+            logger.info(f"❓ Вопрос: {question}")
+            logger.info(f"📋 Вариантов: {len(options)}")
+            logger.info(f"🔒 Анонимный: {is_anonymous}")
+            logger.info(f"📝 Тип: {type}")
+            
+            message = await self.bot.send_poll(
+                chat_id=chat_id,
+                question=question,
+                options=options,
+                is_anonymous=is_anonymous,
+                type=type,
+                allows_multiple_answers=allows_multiple_answers,
+                correct_option_id=correct_option_id,
+                explanation=explanation,
+                explanation_entities=explanation_entities,
+                open_period=open_period,
+                close_date=close_date,
+                is_closed=is_closed,
+                disable_notification=disable_notification,
+                protect_content=protect_content,
+                reply_to_message_id=reply_to_message_id,
+                allow_sending_without_reply=allow_sending_without_reply,
+                reply_markup=reply_markup
+            )
+            
+            logger.info(f"✅ Опрос опубликован: ID {message.message_id}")
+            return message
+            
+        except Exception as e:
+            logger.error(f"❌ Ошибка публикации опроса: {e}")
+            return None
+    
     async def publish_post(
         self,
         post_data: Dict[str, Any],

@@ -14,6 +14,17 @@ class PostCreationStates(StatesGroup):
     waiting_schedule_time = State()  # Ожидание ввода времени для изменения отложенного поста
     confirm = State()  # Подтверждение
 
+class PollCreationStates(StatesGroup):
+    """Состояния для создания опроса"""
+    idle = State()  # Начальное состояние
+    enter_question = State()  # Ввод вопроса
+    enter_options = State()  # Ввод вариантов ответов
+    poll_settings = State()  # Настройки опроса (тип, анонимность и т.д.)
+    preview = State()  # Предпросмотр опроса
+    schedule = State()  # Планирование публикации
+    enter_time = State()  # Ввод времени публикации
+    confirm = State()  # Подтверждение
+
 class AdminStates(StatesGroup):
     """Состояния для админских функций"""
     idle = State()

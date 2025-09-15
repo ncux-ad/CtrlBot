@@ -42,7 +42,7 @@ async def cmd_start(message: Message):
     logger.info("Admin access granted for user %s", message.from_user.id)
     
     await message.answer(
-        "👑 *Админ панель CtrlAI_Bot*\n\n"
+        "👑 *Админ панель CtrlAI\\_Bot*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -62,10 +62,11 @@ async def cmd_start(message: Message):
 async def cmd_admin(message: Message):
     """Главная админ панель"""
     await message.answer(
-        "👑 *Админ панель CtrlAI_Bot*\n\n"
+        "👑 *Админ панель CtrlAI\\_Bot*\n\n"
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
+            [InlineKeyboardButton(text="📊 Создать опрос", callback_data="create_poll")],
             [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
             [InlineKeyboardButton(text="📢 Проверить отложенные", callback_data="check_scheduled_posts")],
             [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
@@ -407,7 +408,7 @@ async def handle_inline_query(inline_query: InlineQuery):
         # Кнопка для справки
         results.append(InlineQueryResultArticle(
             id="help",
-            title="❓ Справка CtrlAI_Bot",
+            title="❓ Справка CtrlAI\\_Bot",
             description="Показать справку по использованию бота",
             input_message_content=InputTextMessageContent(
                 message_text="🤖 *CtrlAI\\_Bot \\- Справка для канала*\n\n"
@@ -425,7 +426,7 @@ async def handle_inline_query(inline_query: InlineQuery):
         # Кнопка для админ-панели
         results.append(InlineQueryResultArticle(
             id="admin_panel",
-            title="👑 Админ-панель CtrlAI_Bot",
+            title="👑 Админ-панель CtrlAI\\_Bot",
             description="Открыть админ-панель для управления каналом",
             input_message_content=InputTextMessageContent(
                 message_text="👑 *Админ\\-панель CtrlAI\\_Bot*\n\n"
@@ -446,7 +447,7 @@ async def handle_inline_query(inline_query: InlineQuery):
     if not results:
         results.append(InlineQueryResultArticle(
             id="placeholder",
-            title="🤖 CtrlAI_Bot - Управление каналами",
+            title="🤖 CtrlAI\\_Bot - Управление каналами",
             description="Введите команду для управления каналом",
             input_message_content=InputTextMessageContent(
                 message_text="🤖 *CtrlAI\\_Bot \\- Управление каналами*\n\n"
@@ -702,7 +703,7 @@ async def callback_channel_settings(callback: CallbackQuery):
                 MIN(p.created_at) as first_post_date
             FROM channels c
             LEFT JOIN posts p ON c.id = p.channel_id
-            GROUP BY c.id, c.title, c.tg_channel_id, c.created_at, c.enabled
+            GROUP BY c.id, c.title, c.tg_channel_id, c.created_at
             ORDER BY c.title ASC
         """
         channels = await db.fetch_all(channels_query)
@@ -715,10 +716,10 @@ async def callback_channel_settings(callback: CallbackQuery):
             total_published = sum(ch['published_count'] for ch in channels)
             total_scheduled = sum(ch['scheduled_count'] for ch in channels)
             total_drafts = sum(ch['draft_count'] for ch in channels)
-            active_channels = sum(1 for ch in channels if ch['enabled'])
+            active_channels = len(channels)  # Все каналы считаем активными
             
             text = "📢 *Настройки канала*\n\n"
-            text += f"📊 **Общая статистика:**\n"
+            text += f"📊 \\*\\*Общая статистика\\:\\*\\*\n"
             text += f"• Каналов: {len(channels)} \\(активных: {active_channels}\\)\n"
             text += f"• Всего постов: {total_posts}\n"
             text += f"• ✅ Опубликовано: {total_published}\n"
@@ -728,11 +729,11 @@ async def callback_channel_settings(callback: CallbackQuery):
             
             for i, channel in enumerate(channels[:5], 1):  # Показываем первые 5 каналов
                 channel_title = channel['title'] or 'Без названия'
-                status_icon = "✅" if channel['enabled'] else "❌"
+                status_icon = "✅"  # Все каналы активны
                 
                 text += f"**{i}\\. {status_icon} {channel_title}**\n"
                 text += f"• ID: `{channel['tg_channel_id']}`\n"
-                text += f"• **Всего постов:** {channel['posts_count']}\n"
+                text += f"• \\*\\*Всего постов\\:\\*\\* {channel['posts_count']}\n"
                 text += f"  \\- ✅ Опубликовано: {channel['published_count']}\n"
                 text += f"  \\- ⏰ Запланировано: {channel['scheduled_count']}\n"
                 text += f"  \\- 📝 Черновики: {channel['draft_count']}\n"
@@ -746,7 +747,8 @@ async def callback_channel_settings(callback: CallbackQuery):
                     last_post = channel['last_post_date']
                     if isinstance(last_post, str):
                         last_post = datetime.fromisoformat(last_post.replace('Z', '+00:00'))
-                    text += f"• **Последний пост:** {last_post.strftime('%d.%m.%Y %H:%M')}\n"
+                    last_post_str = last_post.strftime('%d.%m.%Y %H:%M').replace('.', '\\.')
+                    text += f"• **Последний пост:** {last_post_str}\n"
                 
                 text += "\n"
             
@@ -756,6 +758,7 @@ async def callback_channel_settings(callback: CallbackQuery):
         keyboard = [
             [InlineKeyboardButton(text="➕ Добавить канал", callback_data="add_channel")],
             [InlineKeyboardButton(text="📊 Статистика каналов", callback_data="channel_stats")],
+            [InlineKeyboardButton(text="⚙️ Управление каналами", callback_data="manage_channels")],
             [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_admin")]
         ]
         
@@ -775,8 +778,183 @@ async def callback_channel_settings(callback: CallbackQuery):
                 ]),
                 parse_mode=ParseMode.MARKDOWN_V2
             )
+
+@router.callback_query(F.data == "manage_channels", admin_filter)
+async def callback_manage_channels(callback: CallbackQuery):
+    """Управление каналами"""
+    try:
+        from database import db
+        
+        # Получаем каналы с базовой информацией
+        channels_query = """
+            SELECT 
+                c.*,
+                COUNT(p.id) as posts_count,
+                COUNT(CASE WHEN p.status = 'published' THEN 1 END) as published_count
+            FROM channels c
+            LEFT JOIN posts p ON c.id = p.channel_id
+            GROUP BY c.id, c.title, c.tg_channel_id, c.created_at
+            ORDER BY c.title ASC
+        """
+        channels = await db.fetch_all(channels_query)
+        
+        if not channels:
+            text = "⚙️ *Управление каналами*\n\n❌ У вас нет доступных каналов"
+            keyboard = [
+                [InlineKeyboardButton(text="➕ Добавить канал", callback_data="add_channel")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="channel_settings")]
+            ]
+        else:
+            text = "⚙️ *Управление каналами*\n\n"
+            text += f"📺 *Доступные каналы:*\n\n"
+            
+            keyboard = []
+            for i, channel in enumerate(channels[:10], 1):  # Показываем первые 10 каналов
+                channel_title = channel['title'] or 'Без названия'
+                status_icon = "✅"  # Все каналы активны
+                status_text = "Активен"  # Все каналы активны
+                
+                text += f"**{i}\\. {status_icon} {channel_title}**\n"
+                text += f"• ID: `{channel['tg_channel_id']}`\n"
+                text += f"• Статус: {status_text}\n"
+                text += f"• Постов: {channel['posts_count']} \\(опубликовано: {channel['published_count']}\\)\n\n"
+                
+                # Добавляем кнопки для каждого канала
+                if i <= 5:  # Показываем кнопки только для первых 5 каналов
+                    channel_buttons = [
+                        InlineKeyboardButton(
+                            text=f"📝 {channel_title[:15]}{'...' if len(channel_title) > 15 else ''}", 
+                            callback_data=f"channel_detail_{channel['id']}"
+                        )
+                    ]
+                    if i % 2 == 1:  # Группируем по 2 кнопки в ряд
+                        keyboard.append(channel_buttons)
+                    else:
+                        keyboard[-1].extend(channel_buttons)
+            
+            if len(channels) > 10:
+                text += f"... и еще {len(channels) - 10} каналов\n\n"
+            
+            # Добавляем общие кнопки
+            keyboard.extend([
+                [InlineKeyboardButton(text="➕ Добавить канал", callback_data="add_channel")],
+                [InlineKeyboardButton(text="📊 Статистика", callback_data="channel_stats")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="channel_settings")]
+            ])
+        
+        if callback.message:
+            await callback.message.edit_text(
+                text,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard),
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+    except Exception as e:
+        logger.error("Error in callback_manage_channels: %s", e)
+        if callback.message:
+            await callback.message.edit_text(
+                "❌ *Ошибка загрузки каналов*\n\nПопробуйте позже",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="🔙 Назад", callback_data="channel_settings")]
+                ]),
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
     
     await callback.answer()
+
+@router.callback_query(F.data.startswith("channel_detail_"), admin_filter)
+async def callback_channel_detail(callback: CallbackQuery):
+    """Детальная информация о канале"""
+    try:
+        from database import db
+        
+        # Извлекаем ID канала из callback_data
+        channel_id = int(callback.data.split("_")[-1])
+        
+        # Получаем детальную информацию о канале
+        channel_query = """
+            SELECT 
+                c.*,
+                COUNT(p.id) as posts_count,
+                COUNT(CASE WHEN p.status = 'published' THEN 1 END) as published_count,
+                COUNT(CASE WHEN p.status = 'scheduled' THEN 1 END) as scheduled_count,
+                COUNT(CASE WHEN p.status = 'draft' THEN 1 END) as draft_count,
+                COUNT(CASE WHEN p.status = 'deleted' THEN 1 END) as deleted_count,
+                COUNT(CASE WHEN p.media_type IS NOT NULL THEN 1 END) as media_posts_count,
+                MAX(p.created_at) as last_post_date,
+                MIN(p.created_at) as first_post_date
+            FROM channels c
+            LEFT JOIN posts p ON c.id = p.channel_id
+            WHERE c.id = $1
+            GROUP BY c.id, c.title, c.tg_channel_id, c.created_at
+        """
+        channel = await db.fetch_one(channel_query, channel_id)
+        
+        if not channel:
+            text = "❌ *Канал не найден*"
+            keyboard = [
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="manage_channels")]
+            ]
+        else:
+            channel_title = channel['title'] or 'Без названия'
+            status_icon = "✅"  # Все каналы активны
+            status_text = "Активен"  # Все каналы активны
+            
+            text = f"📺 *{status_icon} {channel_title}*\n\n"
+            text += f"\\*\\*Основная информация\\:\\*\\*\n"
+            text += f"• ID: `{channel['tg_channel_id']}`\n"
+            text += f"• Статус: {status_text}\n"
+            created_str = channel['created_at'].strftime('%d.%m.%Y %H:%M').replace('.', '\\.') if channel['created_at'] else 'Неизвестно'
+            text += f"• Создан: {created_str}\n\n"
+            
+            text += f"\\*\\*Статистика постов\\:\\*\\*\n"
+            text += f"• Всего: {channel['posts_count']}\n"
+            text += f"• ✅ Опубликовано: {channel['published_count']}\n"
+            text += f"• ⏰ Запланировано: {channel['scheduled_count']}\n"
+            text += f"• 📝 Черновики: {channel['draft_count']}\n"
+            text += f"• 🗑️ Удаленные: {channel['deleted_count']}\n"
+            
+            if channel['media_posts_count'] > 0:
+                text += f"• 📎 С медиа: {channel['media_posts_count']}\n"
+            
+            if channel['last_post_date']:
+                from datetime import datetime
+                last_post = channel['last_post_date']
+                if isinstance(last_post, str):
+                    last_post = datetime.fromisoformat(last_post.replace('Z', '+00:00'))
+                text += f"\n\\*\\*Активность\\:\\*\\*\n"
+                last_post_str = last_post.strftime('%d.%m.%Y %H:%M').replace('.', '\\.')
+                text += f"• Последний пост: {last_post_str}\n"
+            
+            if channel['first_post_date']:
+                first_post = channel['first_post_date']
+                if isinstance(first_post, str):
+                    first_post = datetime.fromisoformat(first_post.replace('Z', '+00:00'))
+                first_post_str = first_post.strftime('%d.%m.%Y %H:%M').replace('.', '\\.')
+                text += f"• Первый пост: {first_post_str}\n"
+            
+            keyboard = [
+                [InlineKeyboardButton(text="📝 Посты канала", callback_data=f"channel_posts_{channel_id}")],
+                [InlineKeyboardButton(text="⚙️ Настройки", callback_data=f"channel_config_{channel_id}")],
+                [InlineKeyboardButton(text="📊 Статистика", callback_data=f"channel_stats_{channel_id}")],
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="manage_channels")]
+            ]
+        
+        if callback.message:
+            await callback.message.edit_text(
+                text,
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=keyboard),
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+    except Exception as e:
+        logger.error("Error in callback_channel_detail: %s", e)
+        if callback.message:
+            await callback.message.edit_text(
+                "❌ *Ошибка загрузки канала*\n\nПопробуйте позже",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="🔙 Назад", callback_data="manage_channels")]
+                ]),
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
 
 @router.callback_query(F.data == "manage_tags", admin_filter)
 async def callback_manage_tags(callback: CallbackQuery):
@@ -990,7 +1168,7 @@ async def callback_back_to_admin(callback: CallbackQuery):
     try:
         if callback.message:
             await callback.message.edit_text(
-                "👑 *Админ панель CtrlAI_Bot*\n\n"
+                "👑 *Админ панель CtrlAI\\_Bot*\n\n"
                 "Выберите действие:",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
@@ -1057,6 +1235,51 @@ async def callback_create_post(callback: CallbackQuery, state: FSMContext):
             )
     except Exception as e:
         logger.warning("Failed to edit message in create_post: %s", e)
+    await callback.answer()
+
+@router.callback_query(F.data == "create_poll", admin_filter)
+async def callback_create_poll(callback: CallbackQuery, state: FSMContext):
+    """Создание нового опроса"""
+    from utils.states import PollCreationStates
+    
+    # Проверяем, есть ли привязанные каналы
+    from database import db
+    channels = await db.fetch_all("SELECT id, tg_channel_id, title FROM channels")
+    
+    if not channels:
+        # Нет каналов - показываем инструкцию
+        await callback.message.edit_text(
+            "🔗 *Сначала привяжите канал!*\n\n"
+            "Для создания опросов нужно привязать канал:\n\n"
+            "1️⃣ *Добавьте бота в канал как администратора*\n"
+            "   • Права: отправка сообщений\n"
+            "   • Редактирование сообщений\n\n"
+            "2️⃣ *Используйте команду /add_channel в канале*\n"
+            "   Или добавьте канал через админ\\-панель\n\n"
+            "После этого вы сможете создавать опросы\\!",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_admin")]
+            ]),
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        await callback.answer("❌ Нет привязанных каналов!")
+        return
+    
+    # Переходим к созданию опроса
+    await state.set_state(PollCreationStates.enter_question)
+    try:
+        if callback.message:
+            await callback.message.edit_text(
+                "📊 **Создание опроса**\n\n"
+                "Отправьте вопрос для опроса:\n\n"
+                "Пример:\n"
+                "Какой ваш любимый язык программирования?",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="❌ Отмена", callback_data="back_to_admin")]
+                ])
+            )
+    except Exception as e:
+        logger.warning("Failed to edit message in create_poll: %s", e)
     await callback.answer()
 
 @router.callback_query(F.data == "export_json", admin_filter)

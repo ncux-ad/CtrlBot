@@ -49,6 +49,10 @@ async def on_startup():
         dp.include_router(digest_handlers.router)
         dp.include_router(ai_handlers.router)
         
+        # Импорт и регистрация роутера для опросов
+        from handlers import poll_handlers
+        dp.include_router(poll_handlers.router)
+        
         # Глобальный обработчик для не-админов (должен быть последним)
         from aiogram import Router
         from aiogram.types import Message, CallbackQuery
