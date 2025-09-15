@@ -10,3 +10,4 @@ ruff==0.*
 black==24.*
 pytest==8.*
 watchdog==3.*
+alembic==1.*

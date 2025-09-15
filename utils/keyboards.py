@@ -61,7 +61,7 @@ def get_series_keyboard(series: List[dict]) -> InlineKeyboardMarkup:
             callback_data=f"select_series_{s['id']}"
         )])
     
-    keyboard.append([InlineKeyboardButton(text="➕ Новая серия", callback_data="new_series")])
+    keyboard.append([InlineKeyboardButton(text="➕ Новая серия", callback_data="create_series")])
     keyboard.append([InlineKeyboardButton(text="⏭️ Пропустить", callback_data="skip_series")])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -85,7 +85,7 @@ def get_admin_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="📚 Управление сериями", callback_data="manage_series")],
         [InlineKeyboardButton(text="⏰ Напоминания", callback_data="manage_reminders")],
         [InlineKeyboardButton(text="📊 Экспорт", callback_data="export_data")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_main")]
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_admin")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

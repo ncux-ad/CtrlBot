@@ -177,6 +177,24 @@ class TagService:
             return False, "Название тега содержит недопустимые символы"
         
         return True, ""
+    
+    async def get_all_tags(self) -> List[Dict[str, Any]]:
+        """Получение всех тегов с количеством постов"""
+        try:
+            query = """
+                SELECT 
+                    t.*,
+                    COUNT(pt.post_id) as posts_count
+                FROM tags t
+                LEFT JOIN post_tags pt ON t.id = pt.tag_id
+                GROUP BY t.id, t.channel_id, t.name, t.kind, t.created_at
+                ORDER BY t.name ASC
+            """
+            results = await db.fetch_all(query)
+            return [dict(row) for row in results]
+        except Exception as e:
+            logger.error("Failed to get all tags: %s", e)
+            return []
 
 # Глобальный экземпляр сервиса
 tag_service = TagService()

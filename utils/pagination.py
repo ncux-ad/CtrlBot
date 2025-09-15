@@ -135,7 +135,7 @@ class PaginationManager:
         # Общие кнопки
         keyboard.append([
             InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post"),
-            InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")
+            InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")
         ])
         
         return InlineKeyboardMarkup(inline_keyboard=keyboard)

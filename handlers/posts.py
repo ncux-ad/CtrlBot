@@ -179,7 +179,7 @@ async def callback_back_to_admin_from_example(callback: CallbackQuery, state: FS
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-            [InlineKeyboardButton(text="📋 Мои посты", callback_data="view_posts")],
+            [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
             [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
             [InlineKeyboardButton(text="⚙️ Настройки", callback_data="channel_settings")],
             [InlineKeyboardButton(text="🔗 Получить ID канала", callback_data="get_channel_id")]
@@ -761,7 +761,7 @@ async def cmd_my_posts(message: Message):
         # Добавляем кнопки
         keyboard = []
         if len(posts) >= 10:
-            keyboard.append([InlineKeyboardButton(text="📄 Показать еще", callback_data="load_more_posts")])
+            keyboard.append([InlineKeyboardButton(text="📄 Обновить список", callback_data="my_posts")])
         keyboard.append([InlineKeyboardButton(text="👑 Админ-панель", callback_data="back_to_admin")])
         
         await message.answer(
@@ -783,7 +783,7 @@ async def cmd_my_posts(message: Message):
 async def cmd_help(message: Message):
     """Команда помощи"""
     help_text = """
-🤖 *CtrlBot - Помощь*
+🤖 *CtrlAI_Bot - Помощь*
 
 *Основные команды:*
 /new_post - Создать новый пост
@@ -793,6 +793,12 @@ async def cmd_help(message: Message):
 *Для администраторов:*
 /admin - Админ панель
 /config - Настройки
+/add_channel - Добавить канал
+
+*Добавление канала:*
+1. Добавьте бота в канал как администратора
+2. Отправьте команду /add_channel в канале
+3. Бот автоматически добавит канал в систему
 
 *Markdown форматирование:*
 *жирный* - жирный текст

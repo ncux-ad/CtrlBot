@@ -138,6 +138,24 @@ class SeriesService:
             return False, "Код серии содержит недопустимые символы"
         
         return True, ""
+    
+    async def get_all_series(self) -> List[Dict[str, Any]]:
+        """Получение всех серий с количеством постов"""
+        try:
+            query = """
+                SELECT 
+                    s.*,
+                    COUNT(p.id) as posts_count
+                FROM series s
+                LEFT JOIN posts p ON s.id = p.series_id
+                GROUP BY s.id, s.channel_id, s.code, s.title, s.next_number, s.created_at
+                ORDER BY s.title ASC
+            """
+            results = await db.fetch_all(query)
+            return [dict(row) for row in results]
+        except Exception as e:
+            logger.error("Failed to get all series: %s", e)
+            return []
 
 # Глобальный экземпляр сервиса
 series_service = SeriesService()

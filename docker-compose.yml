@@ -8,20 +8,25 @@ services:
     container_name: ctrlbot
     restart: unless-stopped
     environment:
-      - BOT_TOKEN=${BOT_TOKEN}
-      - ADMIN_IDS=${ADMIN_IDS}
+      - BOT_TOKEN=${BOT_TOKEN:-1234567890:ABC-DEF1234ghIkl-zyx57W2v1u123ew11}
+      - ADMIN_IDS=${ADMIN_IDS:-123456789,987654321}
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-ctrlbot_db}
       - DB_USER=${DB_USER:-ctrlbot}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - YANDEX_API_KEY=${YANDEX_API_KEY}
-      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID}
+      - DB_PASSWORD=${DB_PASSWORD:-ctrlbot_password}
+      - YANDEX_API_KEY=${YANDEX_API_KEY:-}
+      - YANDEX_FOLDER_ID=${YANDEX_FOLDER_ID:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - TIMEZONE=${TIMEZONE:-Europe/Moscow}
     volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
+      # Монтируем исходный код для быстрой разработки
+      - .:/app
+      # Исключаем файлы, которые не нужно монтировать
+      - /app/__pycache__
+      - /app/.git
+      - /app/logs
+      - /app/data
     depends_on:
       postgres:
         condition: service_healthy

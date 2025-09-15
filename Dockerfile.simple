@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Создаем директории и пользователя
-RUN mkdir -p /app/logs /app/data && \
+RUN mkdir -p /app/logs /app/data /app/migrations/versions && \
     useradd -m -u 1000 botuser && \
     chown -R botuser:botuser /app
 USER botuser

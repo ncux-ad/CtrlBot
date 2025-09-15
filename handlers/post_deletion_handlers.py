@@ -201,7 +201,7 @@ async def callback_confirm_delete_post(callback: CallbackQuery):
                 f"Пост помечен как удаленный в базе данных.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
                 ])
             )
             logger.info(f"✅ Пост {post_id} успешно удален")
@@ -314,7 +314,7 @@ async def callback_confirm_permanent_delete(callback: CallbackQuery):
                 f"Пост удален из базы данных и канала.",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
                 ])
             )
             logger.info(f"💀 Пост {post_id} удален навсегда")

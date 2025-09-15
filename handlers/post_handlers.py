@@ -183,9 +183,8 @@ async def callback_back_to_admin_from_example(callback: CallbackQuery, state: FS
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-            [InlineKeyboardButton(text="📋 Мои посты", callback_data="view_posts")],
+            [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
             [InlineKeyboardButton(text="📢 Проверить отложенные", callback_data="check_scheduled_posts")],
-            [InlineKeyboardButton(text="🔧 Исправить статусы", callback_data="fix_post_status")],
             [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
             [InlineKeyboardButton(text="🏷️ Управление тегами", callback_data="manage_tags")],
             [InlineKeyboardButton(text="📚 Управление сериями", callback_data="manage_series")],
@@ -668,7 +667,7 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать новый пост", callback_data="create_post")],
             [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
         ])
         
         await callback.message.edit_text(result_text, reply_markup=keyboard)
@@ -711,7 +710,7 @@ async def callback_my_posts_page(callback: CallbackQuery, page: int = None):
                 "Создайте первый пост командой /new_post",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
                 ])
             )
             await callback.answer()
@@ -995,7 +994,7 @@ async def callback_back_to_admin(callback: CallbackQuery, state: FSMContext):
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
             [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-            [InlineKeyboardButton(text="⚙️ Настройки", callback_data="settings")]
+            [InlineKeyboardButton(text="⚙️ Настройки", callback_data="channel_settings")]
         ])
     )
     await callback.answer()
@@ -1311,26 +1310,26 @@ async def process_any_post_message(message: Message, state: FSMContext):
             
             logger.info(f"Получено медиа: {message.content_type} - {media_obj.file_id}")
     
-    # Получаем текст из сообщения
-    if message.text:
-        text = message.text.strip()
+        # Получаем текст из сообщения
+        if message.text:
+            text = message.text.strip()
             entities = message.entities
-    elif message.caption:
-        text = message.caption.strip()
+        elif message.caption:
+            text = message.caption.strip()
             entities = message.caption_entities
         
         # Если нет текста и нет медиа
         if not text and not media_data:
             logger.warning("Сообщение не содержит ни текста, ни медиа")
             await message.answer("❌ *Не удалось получить контент*\n\nСообщение не содержит текста или медиа-файлов.")
-        return
-    
-    # Валидация текста
-    is_valid, error_msg = await post_service.validate_post_text(text)
-    if not is_valid:
+            return
+        
+        # Валидация текста
+        is_valid, error_msg = await post_service.validate_post_text(text)
+        if not is_valid:
             logger.warning(f"Валидация не прошла: {error_msg}")
-        await message.answer(f"❌ {error_msg}")
-        return
+            await message.answer(f"❌ {error_msg}")
+            return
         
         # Сохраняем текст, entities и медиа
         await state.update_data(
@@ -1338,7 +1337,7 @@ async def process_any_post_message(message: Message, state: FSMContext):
             entities=entities,
             media_data=media_data
         )
-    await state.set_state(PostCreationStates.preview)
+        await state.set_state(PostCreationStates.preview)
         
         # Показываем предпросмотр с медиа
         if media_data:
@@ -1361,10 +1360,10 @@ async def process_any_post_message(message: Message, state: FSMContext):
             elif media_data['type'] == 'audio':
                 preview_text += f"🎵 *Аудио*: {media_data.get('title', 'Без названия')} ({media_data['duration']}с)"
             
-    await message.answer(
+            await message.answer(
                 preview_text,
-        reply_markup=get_post_actions_keyboard()
-    )
+                reply_markup=get_post_actions_keyboard()
+            )
         else:
             # Простой текстовый предпросмотр
             await message.answer(

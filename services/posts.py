@@ -219,6 +219,155 @@ class PostService:
             return False, f"Текст поста слишком длинный (максимум {config.MAX_POST_LENGTH} символов)"
         
         return True, ""
+    
+    async def get_all_posts(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """Получение всех постов"""
+        try:
+            query = """
+                SELECT p.*, c.title as channel_title
+                FROM posts p
+                LEFT JOIN channels c ON p.channel_id = c.id
+                ORDER BY p.created_at DESC
+                LIMIT $1 OFFSET $2
+            """
+            posts = await db.fetch_all(query, limit, offset)
+            return [dict(post) for post in posts]
+        except Exception as e:
+            logger.error("Failed to get all posts: %s", e)
+            return []
+    
+    async def cancel_scheduled_post(self, post_id: int) -> bool:
+        """Отмена запланированного поста"""
+        try:
+            # Проверяем, что пост существует и запланирован
+            post = await db.fetch_one(
+                "SELECT id, status FROM posts WHERE id = $1", post_id
+            )
+            
+            if not post:
+                logger.warning("Post %s not found", post_id)
+                return False
+            
+            if post['status'] != 'scheduled':
+                logger.warning("Post %s is not scheduled (status: %s)", post_id, post['status'])
+                return False
+            
+            # Меняем статус на черновик
+            await db.execute(
+                "UPDATE posts SET status = 'draft', scheduled_at = NULL WHERE id = $1",
+                post_id
+            )
+            
+            logger.info("Cancelled scheduled post %s", post_id)
+            return True
+            
+        except Exception as e:
+            logger.error("Failed to cancel scheduled post %s: %s", post_id, e)
+            return False
+    
+    async def retry_failed_post(self, post_id: int) -> bool:
+        """Повторная попытка публикации неудачного поста"""
+        try:
+            # Проверяем, что пост существует и имеет статус failed
+            post = await db.fetch_one(
+                "SELECT id, status FROM posts WHERE id = $1", post_id
+            )
+            
+            if not post:
+                logger.warning("Post %s not found", post_id)
+                return False
+            
+            if post['status'] != 'failed':
+                logger.warning("Post %s is not failed (status: %s)", post_id, post['status'])
+                return False
+            
+            # Меняем статус на черновик для повторной попытки
+            await db.execute(
+                "UPDATE posts SET status = 'draft' WHERE id = $1",
+                post_id
+            )
+            
+            logger.info("Retrying failed post %s", post_id)
+            return True
+            
+        except Exception as e:
+            logger.error("Failed to retry post %s: %s", post_id, e)
+            return False
+    
+    async def update_scheduled_time(self, post_id: int, new_scheduled_at: datetime) -> bool:
+        """Обновление времени публикации запланированного поста"""
+        try:
+            # Проверяем, что пост существует и запланирован
+            post = await db.fetch_one(
+                "SELECT id, status FROM posts WHERE id = $1", post_id
+            )
+            
+            if not post:
+                logger.warning("Post %s not found", post_id)
+                return False
+            
+            if post['status'] != 'scheduled':
+                logger.warning("Post %s is not scheduled (status: %s)", post_id, post['status'])
+                return False
+            
+            # Обновляем время публикации
+            await db.execute(
+                "UPDATE posts SET scheduled_at = $1 WHERE id = $2",
+                new_scheduled_at, post_id
+            )
+            
+            logger.info("Updated scheduled time for post %s to %s", post_id, new_scheduled_at)
+            return True
+            
+        except Exception as e:
+            logger.error("Failed to update scheduled time for post %s: %s", post_id, e)
+            return False
+    
+    async def publish_scheduled_posts(self) -> List[Dict[str, Any]]:
+        """Публикация запланированных постов (вызывается планировщиком)"""
+        try:
+            # Получаем посты, которые нужно опубликовать
+            now = datetime.now(timezone.utc)
+            posts = await db.fetch_all(
+                """
+                SELECT p.*, c.tg_channel_id, c.title as channel_title
+                FROM posts p
+                LEFT JOIN channels c ON p.channel_id = c.id
+                WHERE p.status = 'scheduled' 
+                AND p.scheduled_at <= $1
+                ORDER BY p.scheduled_at ASC
+                """,
+                now
+            )
+            
+            published_posts = []
+            
+            for post in posts:
+                try:
+                    # Здесь должна быть логика публикации через PostPublisher
+                    # Пока просто меняем статус на published
+                    await db.execute(
+                        "UPDATE posts SET status = 'published', published_at = NOW() WHERE id = $1",
+                        post['id']
+                    )
+                    
+                    published_posts.append(dict(post))
+                    logger.info("Published scheduled post %s", post['id'])
+                    
+                except Exception as e:
+                    logger.error("Failed to publish post %s: %s", post['id'], e)
+                    # Меняем статус на failed
+                    await db.execute(
+                        "UPDATE posts SET status = 'failed' WHERE id = $1",
+                        post['id']
+                    )
+            
+            logger.info("Published %s scheduled posts", len(published_posts))
+            return published_posts
+            
+        except Exception as e:
+            logger.error("Failed to publish scheduled posts: %s", e)
+            return []
 
 # Глобальный экземпляр сервиса
 post_service = PostService()

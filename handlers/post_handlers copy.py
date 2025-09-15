@@ -182,9 +182,8 @@ async def callback_back_to_admin_from_example(callback: CallbackQuery, state: FS
         "Выберите действие:",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-            [InlineKeyboardButton(text="📋 Мои посты", callback_data="view_posts")],
+            [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
             [InlineKeyboardButton(text="📢 Проверить отложенные", callback_data="check_scheduled_posts")],
-            [InlineKeyboardButton(text="🔧 Исправить статусы", callback_data="fix_post_status")],
             [InlineKeyboardButton(text="🤖 AI помощник", callback_data="ai_functions")],
             [InlineKeyboardButton(text="🏷️ Управление тегами", callback_data="manage_tags")],
             [InlineKeyboardButton(text="📚 Управление сериями", callback_data="manage_series")],
@@ -667,7 +666,7 @@ async def callback_confirm_publish(callback: CallbackQuery, state: FSMContext):
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать новый пост", callback_data="create_post")],
             [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+            [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
         ])
         
         await callback.message.edit_text(result_text, reply_markup=keyboard)
@@ -710,7 +709,7 @@ async def callback_my_posts_page(callback: CallbackQuery, page: int = None):
                 "Создайте первый пост командой /new_post",
                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                     [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
-                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="main_menu")]
+                    [InlineKeyboardButton(text="🔙 Назад в админ-панель", callback_data="back_to_admin")]
                 ])
             )
             await callback.answer()
@@ -994,7 +993,7 @@ async def callback_back_to_admin(callback: CallbackQuery, state: FSMContext):
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="📝 Создать пост", callback_data="create_post")],
             [InlineKeyboardButton(text="📋 Мои посты", callback_data="my_posts")],
-            [InlineKeyboardButton(text="⚙️ Настройки", callback_data="settings")]
+            [InlineKeyboardButton(text="⚙️ Настройки", callback_data="channel_settings")]
         ])
     )
     await callback.answer()

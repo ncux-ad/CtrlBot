@@ -42,7 +42,7 @@ async def cmd_ai(message: Message):
         ])
         
         await message.answer(
-            f"🤖 *AI помощник CtrlBot*\n\n"
+            f"🤖 *AI помощник CtrlAI_Bot*\n\n"
             f"*Статус:* {status_text}\n\n"
             f"Выберите функцию:",
             reply_markup=keyboard
@@ -64,7 +64,7 @@ async def callback_ai_suggest_tags(callback: CallbackQuery):
         "Отправьте текст поста, и я предложу релевантные теги.\n\n"
         "Просто напишите текст поста в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
         ])
     )
     await callback.answer()
@@ -77,7 +77,7 @@ async def callback_ai_shorten_text(callback: CallbackQuery):
         "Отправьте текст, который нужно сократить.\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
         ])
     )
     await callback.answer()
@@ -91,7 +91,7 @@ async def callback_ai_change_style(callback: CallbackQuery):
         [InlineKeyboardButton(text="📺 Новостной", callback_data="style_news")],
         [InlineKeyboardButton(text="💼 Маркетинговый", callback_data="style_marketing")],
         [InlineKeyboardButton(text="🔧 Технический", callback_data="style_technical")],
-        [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+        [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
     ])
     
     await callback.message.edit_text(
@@ -109,7 +109,7 @@ async def callback_ai_improve_text(callback: CallbackQuery):
         "Отправьте текст для улучшения (исправление ошибок, улучшение стиля).\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
         ])
     )
     await callback.answer()
@@ -122,7 +122,7 @@ async def callback_ai_annotation(callback: CallbackQuery):
         "Отправьте текст поста, и я создам краткую аннотацию.\n\n"
         "Просто напишите текст в следующем сообщении.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+            [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
         ])
     )
     await callback.answer()
@@ -146,7 +146,7 @@ async def callback_ai_settings(callback: CallbackQuery):
             f"• YANDEX_API_KEY: {'✅ Настроен' if ai_service.api_key else '❌ Не настроен'}\n"
             f"• YANDEX_FOLDER_ID: {'✅ Настроен' if ai_service.folder_id else '❌ Не настроен'}",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="ai")]
+                [InlineKeyboardButton(text="🔙 Назад", callback_data="ai_functions")]
             ])
         )
         await callback.answer()
@@ -260,7 +260,7 @@ async def process_text_improvement(message: Message, text: str):
 async def callback_back_to_admin(callback: CallbackQuery):
     """Возврат в админ-панель"""
     await callback.message.edit_text(
-        "👑 *Админ панель CtrlBot*\n\n"
+        "👑 *Админ панель CtrlAI_Bot*\n\n"
         "Выберите действие:",
         reply_markup=get_main_menu_keyboard()
     )

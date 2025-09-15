@@ -6,8 +6,11 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 from asyncpg import Pool
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 from config import config
+from models import Base
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +19,13 @@ class Database:
     
     def __init__(self):
         self.pool: Optional[Pool] = None
+        self.engine = None
+        self.async_session = None
     
     async def connect(self) -> None:
         """Создает пул подключений к БД"""
         try:
+            # AsyncPG pool для прямых SQL запросов
             self.pool = await asyncpg.create_pool(
                 host=config.DB_HOST,
                 port=config.DB_PORT,
@@ -31,6 +37,15 @@ class Database:
                 command_timeout=60
             )
             logger.info("Database connection pool created")
+            
+            # SQLAlchemy engine для миграций и ORM
+            database_url = f"postgresql+asyncpg://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
+            self.engine = create_async_engine(database_url, echo=False)
+            self.async_session = sessionmaker(
+                self.engine, class_=AsyncSession, expire_on_commit=False
+            )
+            logger.info("SQLAlchemy engine created")
+            
         except Exception as e:
             logger.error("Failed to connect to database: %s", e)
             raise
@@ -39,6 +54,8 @@ class Database:
         """Закрывает пул подключений"""
         if self.pool:
             await self.pool.close()
+        if self.engine:
+            await self.engine.dispose()
             logger.info("Database connection pool closed")
     
     @asynccontextmanager
